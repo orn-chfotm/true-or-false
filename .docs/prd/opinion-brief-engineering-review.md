@@ -1,7 +1,7 @@
 # Opinion Brief 기술 검토 보고서
 
 작성일: 2026-07-02  
-대상 문서: [Opinion Brief 제품 기획서](./opinion-brief-product-plan.md)
+대상 문서: [Opinion Brief 제품 기획서](opinion-brief-product-plan.md)
 
 ## 1. 검토 요약
 
