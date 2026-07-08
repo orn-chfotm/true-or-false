@@ -11,6 +11,13 @@ description: "응답 제출은 즉시 결과가 나오지 않는다. 검수 상�
 - `.docs/prd/opinion-brief-engineering-review.md` 2.2
 - `.docs/prd/opinion-brief-product-plan.md` 5.3
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 제출 성공을 "유효 반영"으로 확정 표시하지 않는다. "제출 완료" → "검수 중"으로 시작한다.
+- ❌ 내부 상태값(approved/rejected/needs_manual_review)을 그대로 노출하지 않는다. 도메인 문구만 쓴다.
+- ❌ 검수 결과를 클라이언트에서 낙관 확정하지 않는다. 폴링/무효화로 갱신한다.
+- ❌ 반영 제외/무효 응답에 사유·개선 가이드를 빠뜨리지 않는다.
+
 ## 설계 기준
 
 ### 제출 즉시 결과를 확정 표시하지 않는다
@@ -34,6 +41,31 @@ description: "응답 제출은 즉시 결과가 나오지 않는다. 검수 상�
 ```text
 선택한 입장과 근거의 연결이 약해 투표에 반영되지 않았습니다.
 다음에는 왜 그렇게 생각하는지 구체적인 경험이나 이유를 적어주세요.
+```
+
+## 예시
+
+```ts
+// 내부 상태값 → 도메인 문구 (노출용 매핑)
+const STATUS_LABEL: Record<ResponseStatus, string> = {
+  SUBMITTED: "검수 중",
+  APPROVED: "유효 투표 반영 완료",
+  REJECTED: "투표 반영 제외",
+  NEEDS_MANUAL_REVIEW: "추가 검수 중",
+};
+```
+
+```tsx
+function ResponseStatusView({ status, reason }: { status: ResponseStatus; reason?: string }) {
+  return (
+    <div>
+      <span>{STATUS_LABEL[status]}</span>
+      {status === "REJECTED" && reason && (
+        <p>{reason} 다음에는 구체적인 경험이나 이유를 적어주세요.</p>
+      )}
+    </div>
+  );
+}
 ```
 
 ## 구현 가드레일

@@ -11,6 +11,14 @@ description: "선착순/무작위 참여 슬롯은 원자적으로 예약하고,
 - `.docs/prd/opinion-brief-technology-summary.md` 2.2
 - `.docs/prd/opinion-brief-domain-definition.md` 5, 8
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 슬롯 없는 직접 제출 경로를 만들지 않는다. `reserved` 상태(미만료)에서만 제출을 허용한다.
+- ❌ 슬롯을 비원자적으로 차감하지 않는다(count 조회 후 save 금지). 초과 점유는 DB 조건부 UPDATE 카운터 또는 Redis `INCR`로 막는다.
+- ❌ 유니크 제약만으로 초과 점유를 막았다고 판단하지 않는다. `(opinion_brief_id, user_id)` 유니크는 **중복 예약**만 막고 총원 초과는 못 막는다.
+- ❌ Brief당 사용자 중복 응답을 허용하지 않는다.
+- ❌ 종료 조건 없는 무제한 누적형 투표를 만들지 않는다(인원 + 시간 혼합형).
+
 ## 설계 기준
 
 ### 응답 권한과 슬롯 점유를 분리한다 (R5)
@@ -34,9 +42,41 @@ BriefParticipantSlot
 
 승인 응답 100개가 목표라면, 예상 탈락률을 감안해 실제 제출 슬롯은 120~150개까지 운영한다.
 
+## 예시
+
+```java
+// 초과 점유 방지: DB 조건부 UPDATE 카운터 (영향 행 0 = 마감)
+// UPDATE opinion_brief SET reserved_slot_count = reserved_slot_count + 1
+//  WHERE id = :briefId AND reserved_slot_count < max_slots
+// ※ count 조회 후 save하는 방식은 레이스 컨디션으로 초과 모집이 발생하므로 금지
+@Transactional
+public BriefParticipantSlot reserve(Long briefId, Long userId) {
+    int updated = briefSlotCounterRepository.tryOccupy(briefId); // 조건부 UPDATE, 원자적
+    if (updated == 0) {
+        throw new SlotSoldOutException(briefId); // 잔여 슬롯 없음
+    }
+    try {
+        // 중복 예약 방지: (opinion_brief_id, user_id) 유니크 제약
+        return slotRepository.save(BriefParticipantSlot.reserve(briefId, userId)); // status = RESERVED
+    } catch (DataIntegrityViolationException e) {
+        briefSlotCounterRepository.release(briefId); // 점유 반환
+        throw new AlreadyReservedException(briefId, userId);
+    }
+}
+
+// 제출은 reserved(미만료) 슬롯에서만
+@Transactional
+public void submit(Long slotId, Long userId, SubmitResponseCommand command) {
+    BriefParticipantSlot slot = slotRepository.findReservableSlot(slotId, userId)
+            .orElseThrow(() -> new SlotNotReservableException(slotId));
+    slot.markSubmitted();
+    // ... 응답 저장 (02-review-pipeline)
+}
+```
+
 ## 구현 가드레일
 
-- 슬롯 예약은 원자적으로 처리한다. Redis 원자 카운터(`INCR`)로 잔여 슬롯을 차감하거나, DB 유니크 제약 + 트랜잭션으로 초과 점유를 막는다.
+- 슬롯 예약은 원자적으로 처리한다. 기본은 DB 조건부 UPDATE 카운터(영향 행 0 = 마감)이고, 트래픽이 커지면 Redis 원자 카운터(`INCR`)로 대체한다. 중복 예약은 `(opinion_brief_id, user_id)` 유니크 제약으로 막는다.
 - 응답 제출은 슬롯이 `reserved`이고 만료되지 않았을 때만 허용한다. 슬롯 없는 직접 제출 경로를 만들지 않는다.
 - 만료 슬롯(`expires_at` 경과)은 스케줄러로 `expired` 처리하고, 잔여 슬롯으로 되돌린다. (job 설계는 `async-job-design` 스킬)
 - (opinion_brief_id, user_id) 단위로 Brief당 1회 응답을 보장한다.

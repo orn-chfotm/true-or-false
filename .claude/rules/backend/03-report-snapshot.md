@@ -11,6 +11,14 @@ AE용 리포트 생성 규칙을 정의한다.
 - `.docs/prd/opinion-brief-product-plan.md` 5.5
 - `.docs/prd/opinion-brief-domain-definition.md` 7
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 리포트를 실시간 쿼리로 렌더하지 않는다. 생성 시점 스냅샷을 고정 저장한다.
+- ❌ 리포트 조회 API가 원본 `BriefResponse`를 다시 집계·재계산하지 않는다.
+- ❌ PII 마스킹 없이 대표 원문을 리포트에 넣지 않는다.
+- ❌ `review_required` 상태 리포트를 고객에게 `delivered`로 전달하지 않는다.
+- ❌ "대표 표본"·"전국 여론" 같은 과장 표현을 리포트/카피에 쓰지 않는다.
+
 ## 설계 기준
 
 ### 리포트는 스냅샷이다 (R3)
@@ -43,6 +51,36 @@ Report
 ### 초기에는 사람 검수 단계를 둔다 (P2)
 
 AI 요약이 원문과 다른 결론을 낼 수 있고, 50만 원 가격대 품질을 자동화만으로 보장하기 어렵다. 상태에 `review_required`를 두고, 초기에는 관리자 검수 후 `ready`로 전달한다.
+
+## 예시
+
+```java
+// Report 엔티티: 생성 시점의 승인 응답·요약을 *_json 스냅샷으로 고정
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Report extends BaseTimeEntity {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private Long opinionBriefId;
+
+    @Enumerated(EnumType.STRING)
+    private ReportStatus status; // draft | review_required | ready | delivered | archived
+
+    private int approvedResponseCount;
+    private int excludedResponseCount;
+
+    @Column(columnDefinition = "jsonb")
+    private String summaryJson;           // 요약 스냅샷 (재집계 금지)
+
+    @Column(columnDefinition = "jsonb")
+    private String audienceSnapshotJson;  // 응답자 구성 스냅샷
+
+    private String methodologyNote;
+}
+```
 
 ## 구현 가드레일
 

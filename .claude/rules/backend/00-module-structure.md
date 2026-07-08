@@ -6,6 +6,15 @@ description: "백엔드는 user-api/admin-api/domain/infra/core 멀티 모듈 DD
 
 Opinion Brief 백엔드의 모듈 경계와 배치 규칙이다. 이 문서가 나머지 backend 룰(`01`~`06`)의 코드 배치 기준이 된다.
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ `domain`에서 `infra`를 import하지 않는다. 영속은 포트 interface로만 참조한다.
+- ❌ Controller(`*-api`)에 비즈니스 로직을 넣지 않는다. 매핑·위임만 한다.
+- ❌ Entity를 `*-api`나 `infra`에 정의하지 않는다. `domain`에 단일로 둔다.
+- ❌ Entity를 API 응답으로 직렬화하지 않는다. DTO로 변환한다.
+- ❌ 외부 시스템 SDK(DB/AWS/SMTP/LLM) 접근을 `infra` 밖에서 하지 않는다.
+- ❌ `core`에 도메인 로직이나 특정 유스케이스를 넣지 않는다.
+
 ## 설계 기준
 
 ### 멀티 모듈 구성
@@ -87,6 +96,31 @@ core: 전 모듈 공유
 | 보상 원장 (`04`) | 원장 로직 `domain/service`, RewardLedger entity `domain`, DB 접근 `infra/persistence` |
 | 슬롯 동시성 (`05`) | 예약 로직 `domain/service`, Slot entity `domain`, 유니크 제약·QueryDSL `infra/persistence`, Redis 카운터 `infra` |
 | 개인정보 (`06`) | 마스킹·집계 `domain/service`, DB 접근 `infra/persistence`, 응답 DTO `domain`(공용)/`*-api`(표현) |
+
+## 예시
+
+```java
+// domain/opinionbrief/OpinionBriefRepository.java — 포트(interface)
+public interface OpinionBriefRepository
+        extends JpaRepository<OpinionBrief, Long>, OpinionBriefCustomRepository {
+}
+```
+
+```java
+// domain/opinionbrief/service/BriefService.java — 포트에만 의존 (infra import 없음)
+@Service
+@RequiredArgsConstructor
+public class BriefService {
+    private final OpinionBriefRepository opinionBriefRepository; // 포트
+}
+```
+
+```java
+// infra/persistence/opinionbrief/OpinionBriefCustomRepositoryImpl.java — 실제 DB 접근
+public class OpinionBriefCustomRepositoryImpl implements OpinionBriefCustomRepository {
+    private final JPAQueryFactory queryFactory; // domain의 포트를 infra가 구현
+}
+```
 
 ## 구현 가드레일
 

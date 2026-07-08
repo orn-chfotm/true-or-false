@@ -11,6 +11,13 @@ description: "보상은 포인트 잔액 직접 수정이 아니라 원장(ledge
 - `.docs/prd/opinion-brief-domain-definition.md` 9
 - `.docs/prd/opinion-brief-product-plan.md` 5.6
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ `user.points += x`처럼 포인트 잔액을 직접 수정하지 않는다. `RewardLedger`에 이벤트로 기록한다.
+- ❌ 검수 결과가 확정되기 전에 보상을 `confirmed`로 올리지 않는다.
+- ❌ 역방향·건너뛰기 상태 전이를 하지 않는다(`pending → confirmed → paid_out`만).
+- ❌ 같은 `(user_id, response_id, type)`에 중복 지급하지 않는다(멱등 보장).
+
 ## 설계 기준
 
 ### 보상은 원장 방식이다 (R4)
@@ -41,6 +48,28 @@ RewardLedger
 2. AI 검수 실패 → `cancelled` (또는 아주 소량만)
 3. AI 검수 통과 → `confirmed` (기본 참여 보상)
 4. 주제 결과 확정 → 반영 참여자에게 추가 보상
+
+## 예시
+
+```java
+// 잔액 직접 수정 X → 원장에 이벤트 추가
+public void confirmParticipation(Long userId, Long responseId) {
+    RewardLedger ledger = RewardLedger.builder()
+            .userId(userId)
+            .responseId(responseId)
+            .type(RewardType.PARTICIPATION)
+            .status(RewardStatus.CONFIRMED)
+            .amount(500)
+            .build();
+    rewardLedgerRepository.save(ledger); // (user_id, response_id, type) 멱등
+}
+
+// 잔액은 원장 합계로 도출
+@Transactional(readOnly = true)
+public long balanceOf(Long userId) {
+    return rewardLedgerRepository.sumConfirmedAmount(userId);
+}
+```
 
 ## 구현 가드레일
 

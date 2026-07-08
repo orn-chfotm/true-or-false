@@ -11,6 +11,14 @@ AE용 리포트 조회·전달 화면 규칙이다. 이 리포트가 제품이 �
 - `.docs/prd/opinion-brief-domain-definition.md` 7
 - `.docs/prd/opinion-brief-engineering-review.md` 2.3, 9.2
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 리포트를 프론트에서 재집계·재계산하지 않는다. 서버 스냅샷을 그대로 렌더한다.
+- ❌ 표본 신뢰 라벨·방법론 주석을 생략하지 않는다. 고정 섹션으로 항상 표시한다.
+- ❌ 개인 식별 정보를 조합·표시하지 않는다. 익명·마스킹된 원문만 쓴다.
+- ❌ "대표 표본"·"전국 여론" 같은 과장 카피를 쓰지 않는다.
+- ❌ `review_required` 상태 리포트를 공유·전달하지 않는다.
+
 ## 설계 기준
 
 ### 리포트는 읽기 전용 스냅샷을 렌더한다
@@ -29,6 +37,23 @@ AE용 리포트 조회·전달 화면 규칙이다. 이 리포트가 제품이 �
 ### 대중 판단과 AI 검토를 분리해 표시한다
 
 절대적 진실을 선언하지 않는다. 대중 판단 비율과 AI 근거 검토를 분리해서 보여주고, 무효 처리 통계도 함께 표시한다.
+
+## 예시
+
+```tsx
+// widgets/report-view/ui/ReportView.tsx — 서버 스냅샷 그대로 렌더, 고정 섹션
+export function ReportView({ report }: { report: ReportResponse }) {
+  return (
+    <article>
+      <ReportSummary summary={report.summary} />
+      <PublicJudgment data={report.publicJudgment} />        {/* 대중 판단 */}
+      <AiReview data={report.aiReview} />                     {/* AI 근거 검토 (분리) */}
+      <AudienceLabel snapshot={report.audienceSnapshot} />   {/* 표본 신뢰 라벨 (고정) */}
+      <MethodologyNote note={report.methodologyNote} />      {/* 방법론 주석 (고정) */}
+    </article>
+  );
+}
+```
 
 ## 구현 가드레일
 

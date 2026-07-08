@@ -1,13 +1,27 @@
 ---
 name: frontend-report-view
-description: "AE용 리포트 조회 화면을 만드는 절차. 신뢰 라벨·방법론 주석 고정 섹션, 대중 판단/AI 검토 분리, 익명 원문, 복사·공유를 포함한다."
+description: "AE용 리포트 조회 화면을 FSD 구조로 만드는 절차. 신뢰 라벨·방법론 주석 고정 섹션, 대중 판단/AI 검토 분리, 익명 원문, 복사·공유를 포함한다."
 ---
 
 # frontend-report-view
 
 제품의 핵심 산출물인 AE용 리포트 화면을 만드는 절차다.
 
-근거: `.claude/rules/frontend/05-report-view.md`, `backend/03-report-snapshot.md`
+근거: `.claude/rules/frontend/05-report-view.md`, `.claude/rules/backend/03-report-snapshot.md`, `.claude/rules/frontend/00-architecture.md`
+
+## FSD 배치
+
+- 리포트 모델·API는 `entities/report`(`model`/`api`)에 둔다.
+- 리포트 표시 블록은 `widgets/report-view`에 두고, 라우트 화면은 `pages`에서 조합한다. 외부에는 `index.ts`로만 노출한다.
+
+## 금지 규칙 (하지 말 것)
+
+- ❌ 리포트를 프론트에서 재집계·재계산하지 않는다. 서버 스냅샷을 그대로 렌더한다.
+- ❌ 표본 신뢰 라벨·방법론 주석을 생략하지 않는다. 고정 섹션으로 항상 표시한다.
+- ❌ 개인 식별 정보를 조합·표시하지 않는다. 익명·마스킹된 원문만 쓴다.
+- ❌ "대표 표본"·"전국 여론" 같은 과장 카피를 쓰지 않는다.
+- ❌ `review_required` 상태 리포트를 공유·전달하지 않는다.
+- ❌ 리포트 로직을 잘못된 레이어에 두지 않는다(모델은 `entities/report`, 표시는 `widgets/report-view`). deep import 금지.
 
 ## 절차
 
@@ -23,6 +37,7 @@ description: "AE용 리포트 조회 화면을 만드는 절차. 신뢰 라벨·
 
 ## 체크리스트
 
+- [ ] 모델이 `entities/report`, 표시가 `widgets/report-view`에 배치됐는가?
 - [ ] 신뢰 라벨·방법론 주석이 고정 섹션으로 항상 표시되는가?
 - [ ] 대중 판단과 AI 검토가 분리 표시되는가?
 - [ ] 대표 원문이 익명·마스킹 값만 쓰는가?
@@ -34,6 +49,7 @@ description: "AE용 리포트 조회 화면을 만드는 절차. 신뢰 라벨·
 ```md
 ## 리포트 화면
 
+- slice(레이어/이름):
 - 섹션 구성:
 - 신뢰 라벨/방법론 위치:
 - 대중 판단/AI 분리:

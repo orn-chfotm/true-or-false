@@ -11,6 +11,13 @@ Brief 생성 폼과 응답 제출 폼의 입력 검증 규칙이다.
 - `.docs/prd/opinion-brief-domain-definition.md` 5, 6
 - `.docs/prd/opinion-brief-technology-summary.md` 2.1, 2.2, 6.1
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 폼 검증 규칙을 컴포넌트에 흩뿌리지 않는다. Zod 스키마 한 곳에 모은다.
+- ❌ 빈 근거·범위 밖 길이의 응답 제출을 허용하지 않는다.
+- ❌ 클라이언트 검증을 신뢰 경계로 삼지 않는다. 서버 검증을 대체하지 않는다.
+- ❌ 제출 진행 중 버튼을 활성 상태로 두어 이중 제출을 허용하지 않는다.
+
 ## 설계 기준
 
 ### 폼은 RHF + Zod로 구성한다
@@ -27,6 +34,26 @@ Brief 생성 폼과 응답 제출 폼의 입력 검증 규칙이다.
 - 근거 의견은 필수다. 빈 근거는 제출 불가.
 - 1~3문장 범위(최소/최대 길이)를 클라이언트에서 먼저 검증한다.
 - Brief당 1회 응답. 중복 제출을 UI에서 막는다. (최종 보장은 서버, `backend/05-participation-slot.md`)
+
+## 예시
+
+```ts
+// features/submit-response/model/schema.ts — Zod 스키마(검증+타입 소스)
+export const submitResponseSchema = z.object({
+  choice: z.enum(["AGREE", "DISAGREE"]),
+  reason: z.string().min(1, "근거를 입력해주세요.").max(300, "근거가 너무 깁니다."),
+});
+export type SubmitResponseForm = z.infer<typeof submitResponseSchema>;
+```
+
+```tsx
+// features/submit-response/ui/ResponseForm.tsx
+const { register, handleSubmit, formState } = useForm<SubmitResponseForm>({
+  resolver: zodResolver(submitResponseSchema),
+});
+// ...
+<button type="submit" disabled={formState.isSubmitting}>제출</button> // 이중 제출 방지
+```
 
 ## 구현 가드레일
 

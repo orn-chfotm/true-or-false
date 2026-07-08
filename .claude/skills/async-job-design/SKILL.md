@@ -14,10 +14,10 @@ description: "검수/리포트/보상/슬롯만료 등 비동기 job을 큐·재
 
 ## 대상 job
 
-- 응답 품질 검수 (`02-review-pipeline.md`)
-- 리포트 초안 생성 (`03-report-snapshot.md`)
-- 보상 확정 (`04-reward-ledger.md`)
-- 슬롯 만료 처리 (`05-participation-slot.md`)
+- 응답 품질 검수 (`.claude/rules/backend/02-review-pipeline.md`)
+- 리포트 초안 생성 (`.claude/rules/backend/03-report-snapshot.md`)
+- 보상 확정 (`.claude/rules/backend/04-reward-ledger.md`)
+- 슬롯 만료 처리 (`.claude/rules/backend/05-participation-slot.md`)
 - 알림 발송·마감 리마인드
 
 ## 설계 원칙

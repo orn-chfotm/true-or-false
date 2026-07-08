@@ -6,7 +6,14 @@ description: "서버 상태(TanStack Query)와 클라이언트 상태(Zustand/Co
 
 근거 문서:
 - `.docs/prd/opinion-brief-technology-summary.md` 6.1, 6.2
-- 하네스 `docs/10-technical/03-javascript.md` (상태·API·UI 책임 분리)
+- 하네스 `.ai-prompts/docs/10-technical/03-javascript.md` (상태·API·UI 책임 분리)
+
+## 금지 규칙 (하지 말 것)
+
+- ❌ 서버 데이터를 `useState`·전역 스토어에 수동 복제·캐싱하지 않는다. TanStack Query 캐시를 단일 소스로 쓴다.
+- ❌ API 호출(fetch/axios)을 컴포넌트 본문에 넣지 않는다. query/mutation 훅(`api` 세그먼트)으로 분리한다.
+- ❌ 검수 상태 등 서버 값을 클라이언트에서 낙관 확정하지 않는다. 폴링/무효화로 갱신한다.
+- ❌ 타입에 `any`를 남발하지 않는다.
 
 ## 설계 기준
 
@@ -20,6 +27,22 @@ description: "서버 상태(TanStack Query)와 클라이언트 상태(Zustand/Co
 
 - fetch/axios 호출은 컴포넌트 본문이 아니라 API 클라이언트 계층(query/mutation 훅)에 둔다.
 - 컴포넌트는 훅이 반환한 데이터·상태·mutation만 사용한다.
+
+## 예시
+
+```ts
+// 서버 상태: TanStack Query (entities/report/api)
+export const useReport = (reportId: number) =>
+  useQuery({ queryKey: ["report", reportId], queryFn: () => getReport(reportId) });
+```
+
+```ts
+// 클라이언트 상태: Zustand (UI 로컬 상태만, 서버 데이터 복제 금지)
+export const useReportUiStore = create<{ tab: string; setTab: (t: string) => void }>((set) => ({
+  tab: "summary",
+  setTab: (tab) => set({ tab }),
+}));
+```
 
 ## 구현 가드레일
 

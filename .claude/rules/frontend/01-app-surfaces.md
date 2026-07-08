@@ -10,6 +10,13 @@ Opinion Brief 프론트엔드를 세 사용자군 표면으로 나누는 규칙�
 - `.docs/prd/opinion-brief-engineering-review.md` 4.1, 5, 9.1
 - `.docs/prd/opinion-brief-technology-summary.md` 3.1, 5
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 한 페이지/라우트에 다른 표면(requester/participant/admin) 기능을 섞지 않는다.
+- ❌ 역할 확인 없는 공용 레이아웃에 관리자 기능을 넣지 않는다.
+- ❌ 참여자 화면에 다른 참여자의 원문 응답을 렌더하지 않는다.
+- ❌ 클라이언트에서 `brief_id`/응답 id를 조작해 타 사용자 리소스를 요청하는 경로를 만들지 않는다.
+
 ## 설계 기준
 
 ### 세 표면을 분리한다
@@ -24,6 +31,28 @@ Opinion Brief 프론트엔드를 세 사용자군 표면으로 나누는 규칙�
 
 - 각 표면은 자신의 역할 토큰으로만 접근한다.
 - 클라이언트에서 `brief_id`/응답 id를 조작해 타 사용자 데이터를 요청하는 흐름을 만들지 않는다. (서버가 최종 차단하지만, UI도 남의 리소스로 가는 링크·요청을 만들지 않는다)
+
+## 예시
+
+```text
+app/
+  (requester)/    # 요청자 표면
+    layout.tsx
+    briefs/page.tsx
+  (participant)/  # 참여자 표면
+    layout.tsx
+  (admin)/        # 관리자 표면
+    layout.tsx
+```
+
+```tsx
+// app/(admin)/layout.tsx — 표면별 레이아웃에서 역할 가드
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { role } = useAuth();
+  if (role !== "ADMIN") redirect("/"); // 관리자 표면은 관리자만
+  return <AdminShell>{children}</AdminShell>;
+}
+```
 
 ## 구현 가드레일
 

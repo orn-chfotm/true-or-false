@@ -10,6 +10,13 @@ description: "Opinion Brief 백엔드 도메인 모델 규칙. OpinionBrief를 �
 - `.docs/prd/opinion-brief-engineering-review.md` 2.1, 2.3(2.4는 04 문서), 4.2, 4.3
 - `.docs/prd/opinion-brief-domain-definition.md` 1, 6, 8
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 범용 `Poll`/`Survey`/`Post` 엔티티로 시작하지 않는다. `OpinionBrief`를 최상위로 둔다.
+- ❌ 상태값을 `String`으로 두거나 서비스에서 상태 필드를 직접 set하지 않는다. `enum` + 도메인 메서드로만 전이한다.
+- ❌ 정의되지 않은 상태 전이(예: `draft` → `delivered` 직행)를 허용하지 않는다.
+- ❌ 리포트/집계에서 실시간 `UserTrustProfile` 점수를 참조하지 않는다. 스냅샷 값을 쓴다.
+
 ## 설계 기준
 
 ### OpinionBrief가 최상위 도메인 모델이다
@@ -46,6 +53,18 @@ RewardLedger:
 ### 신뢰점수는 버전 스냅샷이다 (R8)
 
 `UserTrustProfile`에는 현재 점수를 두되, 응답이 리포트에 반영되는 시점의 점수를 `BriefResponse.trust_score_snapshot`으로 복사해 보관한다. 계산식이 바뀌어도 과거 리포트 결과가 흔들리면 안 되기 때문이다.
+
+## 예시
+
+```java
+// 상태 전이는 도메인 메서드로만 (java/01-dto-response.md의 Entity 규칙과 함께)
+public void startCollecting() {
+    if (this.status != BriefStatus.OPEN) {
+        throw new IllegalStateException("open 상태에서만 수집을 시작할 수 있습니다: " + this.status);
+    }
+    this.status = BriefStatus.COLLECTING; // 정의된 전이만 허용
+}
+```
 
 ## 구현 가드레일
 

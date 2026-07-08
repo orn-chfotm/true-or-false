@@ -11,6 +11,14 @@ description: "응답 품질 검수는 제출 API 안에서 동기 처리하지 �
 - `.docs/prd/opinion-brief-domain-definition.md` 6
 - `.docs/prd/opinion-brief-technology-summary.md` 2.3, 3.2
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 응답 제출 API의 요청 스레드·트랜잭션에서 LLM을 동기 호출하지 않는다. 저장 + 큐 등록까지만 한다.
+- ❌ 검수 결과를 `BriefResponse` 필드 수정만으로 끝내지 않는다. 항상 `ResponseReview` 레코드를 남긴다.
+- ❌ `model_name`/`prompt_version`/입력 해시/출력 JSON 없이 AI 판정을 저장하지 않는다.
+- ❌ 참여자 자유 텍스트를 시스템 프롬프트와 구분 없이 그대로 평가 프롬프트에 넣지 않는다(인젝션 방어).
+- ❌ AI 타임아웃·장애 시 전체 파이프라인을 막지 않는다. 재시도 후 `needs_manual_review`로 전환한다.
+
 ## 설계 기준
 
 ### 검수는 제출 API 안에서 동기 처리하지 않는다 (R2)
@@ -50,6 +58,34 @@ ResponseReview
 ### AI 역할은 분리한다
 
 품질 검수 / 근거 추출 / 리포트 초안 생성은 프롬프트와 평가 기준이 다르므로 하나의 거대한 호출로 합치지 않는다.
+
+## 예시
+
+```java
+// 제출: 저장 + 큐 등록까지만 (LLM 동기 호출 X)
+@Transactional
+public void submit(SubmitResponseCommand command) {
+    BriefResponse response = briefResponseRepository.save(command.toEntity()); // status = SUBMITTED
+    reviewJobPublisher.enqueue(response.getId());
+}
+```
+
+```java
+// 검수 워커: AI 판정 → ResponseReview 기록 → 상태 전이
+public void review(Long responseId) {
+    AiReviewResult result = aiReviewClient.evaluate(responseId); // infra
+    ResponseReview review = ResponseReview.builder()
+            .responseId(responseId)
+            .reviewerType(ReviewerType.AI)
+            .decision(result.decision())
+            .qualityScore(result.qualityScore())
+            .reasonCodes(result.reasonCodes())
+            .modelName(result.modelName())
+            .promptVersion(result.promptVersion())
+            .build();
+    responseReviewRepository.save(review);
+}
+```
 
 ## 구현 가드레일
 

@@ -11,6 +11,14 @@ description: "응답자 원본 프로필과 리포트 제공용 집계 라벨을
 - `.docs/prd/opinion-brief-product-plan.md` 5.4
 - `.docs/prd/opinion-brief-domain-definition.md` 5
 
+## 금지 규칙 (하지 말 것)
+
+- ❌ 생년월일·상세주소·자유 직업명 등 원본 PII를 저장하지 않는다. 버킷(연령대/지역/직업군)으로 저장한다.
+- ❌ 리포트 응답 DTO에 개인 식별 필드(user_id, 연락처 등)를 노출하지 않는다.
+- ❌ PII 마스킹 없이 원문 응답을 리포트에 넣지 않는다.
+- ❌ 정치/사회 이슈 유형 Brief를 MVP에서 생성하지 않는다.
+- ❌ 타 사용자의 `brief_id`·응답에 접근을 허용하지 않는다.
+
 ## 설계 기준
 
 ### 원본 프로필과 집계 라벨을 분리한다 (R6)
@@ -31,6 +39,35 @@ description: "응답자 원본 프로필과 리포트 제공용 집계 라벨을
 ### 정치/사회 이슈 템플릿은 MVP에서 비활성화한다
 
 민감 정보와 의견 데이터가 결합되는 위험이 있어 MVP 범위에서 제외한다.
+
+## 예시
+
+```java
+// 원본 PII 대신 버킷으로 저장 (../jpa/05-enum-converter: @Enumerated STRING)
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class ParticipantProfile {
+
+    @Enumerated(EnumType.STRING)
+    private AgeBucket ageBucket;       // 생년월일 저장 X
+
+    @Enumerated(EnumType.STRING)
+    private RegionBucket regionBucket; // 상세 주소 저장 X
+
+    @Enumerated(EnumType.STRING)
+    private JobBucket jobBucket;
+
+    private String consentVersion;     // 동의 버전
+}
+```
+
+```java
+// 리포트 생성 전 대표 원문 PII 마스킹
+public String maskPii(String text) {
+    return text.replaceAll("01[0-9]-?\\d{3,4}-?\\d{4}", "***-****-****"); // 전화번호 등
+}
+```
 
 ## 구현 가드레일
 
