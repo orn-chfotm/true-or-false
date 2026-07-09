@@ -9,10 +9,11 @@ description: "비동기 검수 결과를 반영하는 상태 화면(제출→검
 
 근거: `.claude/rules/frontend/04-async-status-ui.md`, `.claude/rules/backend/02-review-pipeline.md`, `.claude/rules/frontend/00-architecture.md`
 
-## FSD 배치
+## 언제 사용하나
 
-- 응답·검수 상태 모델은 `entities/response`의 `model`·`api`에 둔다.
-- 상태 표시 블록은 `widgets/response-status` 또는 관련 `features`에 둔다. 외부에는 `index.ts`로만 노출한다.
+- 응답 제출 → 검수 결과 반영까지의 상태 화면을 만들 때
+- 검수 상태 표시·갱신(폴링/무효화) 로직을 추가하거나 바꿀 때
+- 만료·마감·에러 상태 처리를 붙일 때
 
 ## 금지 규칙 (하지 말 것)
 
@@ -21,6 +22,11 @@ description: "비동기 검수 결과를 반영하는 상태 화면(제출→검
 - ❌ 검수 결과를 클라이언트에서 낙관 확정하지 않는다. 폴링/무효화로 갱신한다.
 - ❌ 반영 제외/무효에 사유·개선 가이드를 빠뜨리지 않는다.
 - ❌ 상태 로직을 잘못된 레이어에 두지 않는다(모델은 `entities/response`). slice 내부 deep import 금지.
+
+## FSD 배치
+
+- 응답·검수 상태 모델은 `entities/response`의 `model`·`api`에 둔다.
+- 상태 표시 블록은 `widgets/response-status` 또는 관련 `features`에 둔다. 외부에는 `index.ts`로만 노출한다.
 
 ## 절차
 

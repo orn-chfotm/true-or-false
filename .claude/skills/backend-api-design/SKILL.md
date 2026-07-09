@@ -9,6 +9,20 @@ Opinion Brief API를 세 사용자군으로 분리해 설계·리뷰하는 절�
 
 근거: `.docs/prd/opinion-brief-engineering-review.md` 5, 9.1
 
+## 언제 사용하나
+
+- 새 엔드포인트를 추가할 때
+- 기존 API의 권한·소유권 경계를 검토할 때
+- API 요청/응답 계약을 잡거나 리뷰할 때
+
+## 금지 규칙 (하지 말 것)
+
+- ❌ 한 컨트롤러/라우트에 여러 사용자군(requester/participant/admin) 기능을 섞지 않는다. 표면별 모듈(`user-api`/`admin-api`)로 분리한다.
+- ❌ 소유권 검증 없이 `brief_id`/응답 id로 리소스에 접근하는 엔드포인트를 만들지 않는다(IDOR). 자신의 리소스만 접근 가능해야 한다.
+- ❌ 슬롯 예약 없는 직접 제출 경로를 만들지 않는다. (`.claude/rules/backend/05-participation-slot.md`)
+- ❌ 응답 DTO에 원본 PII·타 사용자 데이터를 노출하지 않는다. (`.claude/rules/backend/06-privacy.md`)
+- ❌ 경로에 `/v1` 버전 prefix를 빠뜨리지 않는다. (`.claude/rules/backend/spring/01-controller.md`)
+
 ## 사용자군 경계
 
 MVP API는 세 사용자군을 분리해서 설계한다. 한 컨트롤러에 역할을 섞지 않는다. 경로에는 `/v1` 버전 prefix를 둔다(`.claude/rules/backend/spring/01-controller.md`).

@@ -12,6 +12,19 @@ description: "검수/리포트/보상/슬롯만료 등 비동기 job을 큐·재
 - `.docs/prd/opinion-brief-technology-summary.md` 3.1, 6.4
 - 내구성 유의: `@Async`/Spring Events는 인메모리라 재시작·배포 중 작업이 유실될 수 있다. 마감 걸린 작업은 DB 상태 추적 + 재시도가 필요하다.
 
+## 언제 사용하나
+
+- 검수/리포트/보상/슬롯만료 등 백그라운드 job을 새로 만들 때
+- 기존 job에 재시도·타임아웃·폴백을 추가하거나 리뷰할 때
+- 마감 시간이 걸린 비동기 처리를 설계할 때
+
+## 금지 규칙 (하지 말 것)
+
+- ❌ 마감이 걸린 작업을 순수 인메모리(`@Async`/Spring Events)만으로 처리하지 않는다. 재시작·배포 중 유실된다. DB 상태 추적 + 재시도를 둔다.
+- ❌ 요청 스레드·트랜잭션 안에서 LLM 등 외부 호출을 동기로 처리하지 않는다. (`.claude/rules/backend/02-review-pipeline.md`)
+- ❌ 타임아웃·폴백 없는 AI 호출을 만들지 않는다. 재시도 후에도 실패하면 `needs_manual_review` 같은 수동 경로로 전환한다.
+- ❌ 멱등 키 없이 job을 설계하지 않는다. 중복 실행 시 보상 이중 지급·중복 집계가 생긴다.
+
 ## 대상 job
 
 - 응답 품질 검수 (`.claude/rules/backend/02-review-pipeline.md`)

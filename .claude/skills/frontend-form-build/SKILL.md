@@ -9,10 +9,11 @@ RHF + Zod로 입력 폼을 만드는 절차다.
 
 근거: `.claude/rules/frontend/03-forms-validation.md`, `.claude/rules/frontend/00-architecture.md`
 
-## FSD 배치
+## 언제 사용하나
 
-- 폼은 사용자 액션이므로 `features` 레이어의 slice에 둔다(예: `features/submit-response`, `features/create-brief`).
-- 세그먼트: Zod 스키마·훅은 `model`, 폼 컴포넌트는 `ui`. 외부에는 `index.ts`로만 노출한다.
+- Brief 생성/응답 제출 등 새 입력 폼을 추가할 때
+- 기존 폼의 검증 규칙을 추가·변경할 때
+- 폼 관련 PR을 리뷰할 때
 
 ## 금지 규칙 (하지 말 것)
 
@@ -21,6 +22,11 @@ RHF + Zod로 입력 폼을 만드는 절차다.
 - ❌ slice 내부를 deep import하지 않는다. `index.ts`로만.
 - ❌ 클라이언트 검증을 서버 검증 대체로 삼지 않는다.
 - ❌ 제출 진행 중 버튼을 활성 상태로 두어 이중 제출을 허용하지 않는다.
+
+## FSD 배치
+
+- 폼은 사용자 액션이므로 `features` 레이어의 slice에 둔다(예: `features/submit-response`, `features/create-brief`).
+- 세그먼트: Zod 스키마·훅은 `model`, 폼 컴포넌트는 `ui`. 외부에는 `index.ts`로만 노출한다.
 
 ## 절차
 
