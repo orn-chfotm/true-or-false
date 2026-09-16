@@ -5,25 +5,33 @@ description: "FSD 레이어에 새 slice(entity/feature/widget/page)를 규칙�
 
 # frontend-fsd-slice
 
+이 스킬은 FSD의 레이어·세그먼트·공개 API 기준에 맞게 slice를 배치하는 절차다.
+
+# 연관 관계
+
+- FSD 구조 정책 (Feature-Sliced Design) 참조: @.claude/rules/frontend/00-architecture.md
+
+# 적용 기준
+
 새 slice를 FSD 정책(`.claude/rules/frontend/00-architecture.md`)에 맞게 추가하는 절차다.
 
-## 언제 사용하나
+# 언제 사용하나
 
 - 새 entity/feature/widget/page slice를 만들 때
 - 기존 코드를 다른 레이어/slice로 옮길 때
 - slice 구조(세그먼트·public API)를 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 하위/동일 레이어를 잘못 참조하지 않는다(의존 방향 위→아래만).
-- ❌ 외부에 slice 내부를 deep import로 노출하지 않는다. `index.ts`로만.
-- ❌ group 폴더에 barrel export를 만들지 않는다. public API는 leaf slice에 둔다.
-- ❌ slice를 3단계 이상 중첩하지 않는다.
-- ❌ 폴더명을 PascalCase로 만들지 않는다(소문자 kebab-case).
-- ❌ 공통 유틸을 `utils`로 만들지 않는다(`lib`).
-- ❌ `shared` slice에 도메인 지식을 넣지 않는다.
+- 하위 레이어가 상위 레이어를 참조하거나 같은 레이어의 다른 slice를 직접 참조하지 않는다. 의존 방향은 위에서 아래로만 허용한다.
+- 외부에 slice 내부를 deep import로 노출하지 않는다. `index.ts`로만 노출한다.
+- group 폴더에 barrel export를 만들지 않는다. public API는 leaf slice에 둔다.
+- slice를 3단계 이상 중첩하지 않는다.
+- 폴더명을 PascalCase로 만들지 않는다(소문자 kebab-case).
+- 공통 유틸을 `utils`로 만들지 않는다(`lib`).
+- `shared` slice에 도메인 지식을 넣지 않는다.
 
-## 절차
+# 절차
 
 1. **레이어 결정** — 만들려는 것이 무엇인지로 레이어를 고른다.
    - 도메인 객체 → `entities`
@@ -38,7 +46,7 @@ description: "FSD 레이어에 새 slice(entity/feature/widget/page)를 규칙�
 4. **public API** — `index.ts`에서 외부에 노출할 것만 export한다.
 5. **의존 방향 확인** — 하위 레이어만 참조하는지, 같은 레이어 다른 slice를 직접 참조하지 않는지 확인한다. 같은 slice 내부 세그먼트끼리는 상대 경로 import를 쓴다.
 
-## 예시
+# 예시
 
 ```text
 features/submit-response/
@@ -49,7 +57,7 @@ features/submit-response/
   index.ts    // export { ResponseForm }, { useSubmitResponse }
 ```
 
-## 체크리스트
+# 체크리스트
 
 - [ ] 레이어 선택이 역할(도메인/액션/블록/화면/공통)과 일치하는가?
 - [ ] slice/group 폴더명이 소문자 kebab-case인가?
@@ -58,7 +66,7 @@ features/submit-response/
 - [ ] `index.ts`가 외부에 노출할 것만 export하는가?
 - [ ] 의존이 하위 레이어만 향하고, 같은 레이어 다른 slice를 직접 참조하지 않는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## 생성한 slice

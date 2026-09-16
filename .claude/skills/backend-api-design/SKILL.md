@@ -5,25 +5,37 @@ description: "Opinion Brief 백엔드 API를 requester/participant/admin 3개 �
 
 # backend-api-design
 
+이 스킬은 사용자군별 API 계약과 권한·소유권 경계를 설계하고 검토하는 절차다.
+
+# 연관 관계
+
+- 제품 기술 검토 근거 참조: @.docs/prd/opinion-brief-engineering-review.md
+- 참여 슬롯 동시성 규칙 참조: @.claude/rules/backend/05-participation-slot.md
+- 개인정보 분리 규칙 참조: @.claude/rules/backend/06-privacy.md
+- Controller 규칙 (Spring Web) 참조: @.claude/rules/backend/spring/01-controller.md
+- 인가(권한) 규칙 — @PreAuthorize 통일 참조: @.claude/rules/backend/security/04-authorization.md
+
+# 적용 기준
+
 Opinion Brief API를 세 사용자군으로 분리해 설계·리뷰하는 절차다.
 
 근거: `.docs/prd/opinion-brief-engineering-review.md` 5, 9.1
 
-## 언제 사용하나
+# 언제 사용하나
 
 - 새 엔드포인트를 추가할 때
 - 기존 API의 권한·소유권 경계를 검토할 때
 - API 요청/응답 계약을 잡거나 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 한 컨트롤러/라우트에 여러 사용자군(requester/participant/admin) 기능을 섞지 않는다. 표면별 모듈(`user-api`/`admin-api`)로 분리한다.
-- ❌ 소유권 검증 없이 `brief_id`/응답 id로 리소스에 접근하는 엔드포인트를 만들지 않는다(IDOR). 자신의 리소스만 접근 가능해야 한다.
-- ❌ 슬롯 예약 없는 직접 제출 경로를 만들지 않는다. (`.claude/rules/backend/05-participation-slot.md`)
-- ❌ 응답 DTO에 원본 PII·타 사용자 데이터를 노출하지 않는다. (`.claude/rules/backend/06-privacy.md`)
-- ❌ 경로에 `/v1` 버전 prefix를 빠뜨리지 않는다. (`.claude/rules/backend/spring/01-controller.md`)
+- 한 컨트롤러/라우트에 여러 사용자군(requester/participant/admin) 기능을 섞지 않는다. 표면별 모듈(`user-api`/`admin-api`)로 분리한다.
+- 소유권 검증 없이 `brief_id`/응답 id로 리소스에 접근하는 엔드포인트를 만들지 않는다(IDOR). 자신의 리소스만 접근 가능해야 한다.
+- 슬롯 예약 없는 직접 제출 경로를 만들지 않는다. (`.claude/rules/backend/05-participation-slot.md`)
+- 응답 DTO에 원본 PII·타 사용자 데이터를 노출하지 않는다. (`.claude/rules/backend/06-privacy.md`)
+- 경로에 `/v1` 버전 prefix를 빠뜨리지 않는다. (`.claude/rules/backend/spring/01-controller.md`)
 
-## 사용자군 경계
+# 사용자군 경계
 
 MVP API는 세 사용자군을 분리해서 설계한다. 한 컨트롤러에 역할을 섞지 않는다. 경로에는 `/v1` 버전 prefix를 둔다(`.claude/rules/backend/spring/01-controller.md`).
 
@@ -58,14 +70,14 @@ POST /v1/admin/reports/:id/approve    # 03 리포트 검수
 POST /v1/admin/rewards/:id/adjust
 ```
 
-## 절차
+# 절차
 
 1. 새 엔드포인트가 어느 사용자군에 속하는지 정한다.
 2. 관련 룰(슬롯/검수/원장/리포트/개인정보)을 확인해 요청·응답 계약을 잡는다.
 3. 권한 경계와 소유권 검증(IDOR 방지)을 명시한다.
 4. 응답 DTO에 개인정보/타 사용자 데이터가 새지 않는지 확인한다. (`.claude/rules/backend/06-privacy.md`)
 
-## 체크리스트
+# 체크리스트
 
 - [ ] 엔드포인트가 requester/participant/admin 중 하나에 명확히 속하는가?
 - [ ] `brief_id`/응답 id 조작으로 타 사용자 데이터에 접근할 수 없는가?
@@ -73,7 +85,7 @@ POST /v1/admin/rewards/:id/adjust
 - [ ] 관리자 조정 API가 감사 로그를 남기는가?
 - [ ] 응답 DTO에 원본 PII가 포함되지 않는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## API 설계

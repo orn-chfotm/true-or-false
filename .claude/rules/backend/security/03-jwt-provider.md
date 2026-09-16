@@ -4,25 +4,36 @@ description: "JwtProvider는 토큰 생성(JwtPayload 입력)과 검증(String �
 
 # 03. JwtProvider 규칙
 
+이 문서는 JwtProvider의 입력·출력, 값 객체와 설정 주입 구조를 정의한다.
+
+# 연관 관계
+
+- JWT 인증 규칙 참조: @.claude/rules/backend/security/01-jwt.md
+- Spring Security 필터체인 규칙 참조: @.claude/rules/backend/security/02-filter-chain.md
+- 모듈 구조 규칙 (멀티 모듈 DDD) 참조: @.claude/rules/backend/00-module-structure.md
+- 인가(권한) 규칙 — @PreAuthorize 통일 참조: @.claude/rules/backend/security/04-authorization.md
+
+# 적용 기준
+
 토큰 생성·검증을 담당하는 `JwtProvider`와 값 객체·설정 규칙이다. 정책은 `01-jwt.md`, 필터 사용은 `02-filter-chain.md`. 배치: `JwtProvider`·`JwtPayload`·`JwtToken`·`JwtProperties`는 `core`(`../00-module-structure.md`의 "core: jwt 공통").
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ `@Value`로 프로퍼티에 접근하지 않는다. `@ConfigurationProperties` record(`JwtProperties`)로 주입한다.
-- ❌ `JwtProvider`를 `static` 유틸 클래스로 만들지 않는다. 주입 가능한 컴포넌트 + 불변 값 객체로 OO 구성한다.
-- ❌ 토큰 생성 입력을 원시 파라미터 나열로 받지 않는다. `JwtPayload` DTO로 받는다.
-- ❌ 검증 메서드에 `JwtPayload`를 받지 않는다. 검증은 `String` 토큰을 받는다.
-- ❌ 시크릿·만료를 코드에 하드코딩하지 않는다. properties + 환경변수(`01-jwt.md`).
-- ❌ 프로퍼티 제약(시크릿 길이·만료 양수 등) 검증을 생략하지 않는다.
+- `@Value`로 프로퍼티에 접근하지 않는다. `@ConfigurationProperties` record(`JwtProperties`)로 주입한다.
+- `JwtProvider`를 `static` 유틸 클래스로 만들지 않는다. 주입 가능한 컴포넌트 + 불변 값 객체로 OO 구성한다.
+- 토큰 생성 입력을 원시 파라미터 나열로 받지 않는다. `JwtPayload` DTO로 받는다.
+- 검증 메서드에 `JwtPayload`를 받지 않는다. 검증은 `String` 토큰을 받는다.
+- 시크릿·만료를 코드에 하드코딩하지 않는다. properties와 환경변수로 주입한다(`01-jwt.md`).
+- 프로퍼티 제약(시크릿 길이·만료 양수 등) 검증을 생략하지 않는다.
 
-## 설계 기준
+# 설계 기준
 
-### 역할 분리: 생성은 JwtPayload, 검증은 String
+## 역할 분리: 생성은 JwtPayload, 검증은 String
 
 - **생성**: `JwtProvider`는 `JwtPayload`(값 객체)를 받아 토큰을 만든다. `JwtPayload`는 로그인 성공 후 토큰 발급 시 사용하는 DTO다(subject·role 등 클레임). 한 계정 = 한 권한이므로 `role`은 단일이다(`04-authorization.md`).
 - **검증**: `JwtProvider`는 `String` JWT 토큰을 받아 유효성·인증을 처리한다.
 
-### JwtPayload (토큰 생성 입력 값 객체)
+## JwtPayload (토큰 생성 입력 값 객체)
 
 ```java
 // core
@@ -34,7 +45,7 @@ public record JwtPayload(
 }
 ```
 
-### JwtProvider (OO 컴포넌트)
+## JwtProvider (OO 컴포넌트)
 
 ```java
 // core
@@ -101,7 +112,7 @@ public class JwtProvider {
 }
 ```
 
-### 토큰 결과 DTO (access + refresh)
+## 토큰 결과 DTO (access + refresh)
 
 로그인 인증 성공 처리 결과로 access·refresh를 담은 토큰 DTO를 반환한다. 컨트롤러에서 **access는 응답 본문, refresh는 httpOnly 쿠키**로 분리한다(`01-jwt.md`).
 
@@ -119,7 +130,7 @@ public record JwtToken(
 
 > 이 DTO가 "인증 처리 시 accessToken·refreshToken을 담아 전달"하는 형태다. 이름은 프로젝트 컨벤션에 맞게 조정 가능하다(예: `JwtToken` / `TokenResult`).
 
-### JwtProperties (@ConfigurationProperties record + 제약)
+## JwtProperties (@ConfigurationProperties record + 제약)
 
 `@Value` 대신 타입 있는 record로 받고, 프로퍼티 제약을 검증한다.
 
@@ -142,7 +153,7 @@ public record JwtProperties(
 @ConfigurationPropertiesScan // 또는 @EnableConfigurationProperties(JwtProperties.class)
 ```
 
-### properties 설정
+## properties 설정
 
 ```yaml
 jwt:
@@ -152,7 +163,7 @@ jwt:
   issuer: opinion-brief
 ```
 
-## 구현 가드레일
+# 구현 가드레일
 
 - `JwtProvider`는 `@Component`로 두고 `JwtProperties`를 주입한다. 시크릿에서 키를 유도한다(`@PostConstruct`).
 - 생성은 `JwtPayload`, 검증은 `String` 토큰을 받는다.
@@ -161,7 +172,7 @@ jwt:
 - `JwtPayload`/`JwtToken`/`JwtProperties`는 불변 record(값 객체)로 두고, 동작은 `JwtProvider`에 둔다(OO).
 - JWT 관련 타입은 `core`에 둔다.
 
-## 검증 기준
+# 검증 기준
 
 - `JwtPayload`로 생성한 토큰이 `validate`를 통과하고, 만료·위조 토큰은 `false`인지 테스트.
 - `getAuthentication`이 userId·role로 올바른 단일 권한을 부여하는지 테스트.

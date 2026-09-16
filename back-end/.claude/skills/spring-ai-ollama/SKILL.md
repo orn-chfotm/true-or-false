@@ -1,5 +1,5 @@
 ---
-description: 백엔드에서 Spring AI와 Ollama qwen3:8b를 연동하고, markdown system prompt와 Elasticsearch RAG context를 주입할 때 사용한다.
+description: 규정집 RAG에서 Spring AI와 Ollama qwen3:8b를 연동하고 markdown system prompt와 Elasticsearch context를 주입할 때 사용한다. OpenAI 기반 사용자 의견 검수에는 적용하지 않는다.
 paths:
   - "back-end/**/*"
 ---
@@ -7,6 +7,8 @@ paths:
 # 스킬: Spring AI Ollama 연동
 
 백엔드에서 Spring AI와 Ollama `qwen3:8b`를 연동할 때 따르는 절차.
+
+사용자 의견 검수는 [spring-ai-opinion-review](../../../../.claude/skills/spring-ai-opinion-review/SKILL.md)를 사용한다. 아래 Ollama·RAG 기본값은 규정집 작업에만 적용한다.
 
 ## 규칙
 

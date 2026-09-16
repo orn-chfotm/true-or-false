@@ -5,24 +5,34 @@ description: "Opinion Brief 백엔드의 Flyway 스키마 마이그레이션을 
 
 # flyway-migration
 
+이 스킬은 PostgreSQL 스키마의 Flyway 마이그레이션을 작성하고 검증하는 절차다.
+
+# 연관 관계
+
+- 제품 기술 구성 근거 참조: @.docs/prd/opinion-brief-technology-summary.md
+- 보상 원장 규칙 참조: @.claude/rules/backend/04-reward-ledger.md
+- 개인정보 분리 규칙 참조: @.claude/rules/backend/06-privacy.md
+
+# 적용 기준
+
 PostgreSQL 스키마를 Flyway 마이그레이션으로 안전하게 변경하는 절차다.
 
 근거: `.docs/prd/opinion-brief-technology-summary.md` 6.1, 6.2
 
-## 언제 사용하나
+# 언제 사용하나
 
 - 새 테이블/컬럼/인덱스/제약을 추가할 때
 - 상태 enum 값이나 도메인 모델이 바뀔 때
 - 마이그레이션 PR을 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 이미 적용된 마이그레이션 파일을 수정하지 않는다. 항상 새 버전 파일로 추가한다.
-- ❌ 동시성/무결성 지점(슬롯 중복 예약, 보상 멱등)에 유니크 제약 없이 넘어가지 않는다. (`.claude/rules/backend/04-reward-ledger.md`, `05-participation-slot.md`)
-- ❌ PII 컬럼을 원본 형태(생년월일·상세주소·자유 직업명)로 정의하지 않는다. 버킷/마스킹 형태로 둔다. (`.claude/rules/backend/06-privacy.md`)
-- ❌ 사용 중인 컬럼을 즉시 삭제하지 않는다. nullable 추가 → 백필 → 정리 순으로 전방 호환을 지킨다.
+- 이미 적용된 마이그레이션 파일을 수정하지 않는다. 항상 새 버전 파일로 추가한다.
+- 동시성/무결성 지점(슬롯 중복 예약, 보상 멱등)에 유니크 제약 없이 넘어가지 않는다. (`.claude/rules/backend/04-reward-ledger.md`, `05-participation-slot.md`)
+- PII 컬럼을 원본 형태(생년월일·상세주소·자유 직업명)로 정의하지 않는다. 버킷/마스킹 형태로 둔다. (`.claude/rules/backend/06-privacy.md`)
+- 사용 중인 컬럼을 즉시 삭제하지 않는다. nullable 추가 → 백필 → 정리 순으로 전방 호환을 지킨다.
 
-## 절차
+# 절차
 
 1. 변경이 어떤 룰의 모델에 해당하는지 확인한다. (`01~06`)
 2. 새 버전 마이그레이션 파일을 추가한다. **이미 적용된 마이그레이션은 수정하지 않는다.**
@@ -33,7 +43,7 @@ PostgreSQL 스키마를 Flyway 마이그레이션으로 안전하게 변경하�
 4. 롤백/전방 호환을 고려한다. (컬럼 삭제보다 nullable 추가 → 백필 → 정리 순)
 5. 로컬/Testcontainers로 마이그레이션 적용을 검증한다.
 
-## 체크리스트
+# 체크리스트
 
 - [ ] 새 버전 파일로 추가했는가? 기존 파일을 수정하지 않았는가?
 - [ ] 상태값이 enum/체크 제약과 일치하는가?
@@ -41,7 +51,7 @@ PostgreSQL 스키마를 Flyway 마이그레이션으로 안전하게 변경하�
 - [ ] PII 컬럼을 원본이 아니라 버킷/마스킹 형태로 정의했는가? (`06`)
 - [ ] 대용량 테이블 변경 시 잠금·마이그레이션 시간을 고려했는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## 마이그레이션

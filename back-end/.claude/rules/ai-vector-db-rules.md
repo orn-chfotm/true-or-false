@@ -1,6 +1,8 @@
 # AI 및 Vector DB 규칙
 
-이 규칙은 AI 연동, RAG 검색, Vector DB 연동 작업에 적용한다.
+이 규칙의 Ollama·Elasticsearch 요구는 규정집 RAG 작업에 적용한다.
+
+사용자 의견 검수는 Spring AI와 OpenAI API를 사용하며, [검수 파이프라인 규칙](../../../.claude/rules/backend/02-review-pipeline.md)을 따른다. 두 작업 모두 외부 AI 호출 구현은 `infra.ai`에 두되, 규정집의 모델·검색 정책을 의견 검수에 적용하지 않는다.
 
 ## AI 모델
 

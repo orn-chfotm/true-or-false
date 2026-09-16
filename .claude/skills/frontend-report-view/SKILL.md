@@ -5,31 +5,41 @@ description: "AE용 리포트 조회 화면을 FSD 구조로 만드는 절차. �
 
 # frontend-report-view
 
+이 스킬은 AE용 리포트 조회·복사·공유 화면을 구현하는 절차다.
+
+# 연관 관계
+
+- 리포트 뷰 규칙 참조: @.claude/rules/frontend/05-report-view.md
+- 리포트 스냅샷 규칙 참조: @.claude/rules/backend/03-report-snapshot.md
+- FSD 구조 정책 (Feature-Sliced Design) 참조: @.claude/rules/frontend/00-architecture.md
+
+# 적용 기준
+
 제품의 핵심 산출물인 AE용 리포트 화면을 만드는 절차다.
 
 근거: `.claude/rules/frontend/05-report-view.md`, `.claude/rules/backend/03-report-snapshot.md`, `.claude/rules/frontend/00-architecture.md`
 
-## 언제 사용하나
+# 언제 사용하나
 
 - AE용 리포트 조회 화면을 새로 만들 때
 - 리포트 섹션 구성·복사/공유 기능을 추가하거나 바꿀 때
 - 리포트 화면 PR을 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 리포트를 프론트에서 재집계·재계산하지 않는다. 서버 스냅샷을 그대로 렌더한다.
-- ❌ 표본 신뢰 라벨·방법론 주석을 생략하지 않는다. 고정 섹션으로 항상 표시한다.
-- ❌ 개인 식별 정보를 조합·표시하지 않는다. 익명·마스킹된 원문만 쓴다.
-- ❌ "대표 표본"·"전국 여론" 같은 과장 카피를 쓰지 않는다.
-- ❌ `review_required` 상태 리포트를 공유·전달하지 않는다.
-- ❌ 리포트 로직을 잘못된 레이어에 두지 않는다(모델은 `entities/report`, 표시는 `widgets/report-view`). deep import 금지.
+- 리포트를 프론트에서 재집계·재계산하지 않는다. 서버 스냅샷을 그대로 렌더한다.
+- 표본 신뢰 라벨·방법론 주석을 생략하지 않는다. 고정 섹션으로 항상 표시한다.
+- 개인 식별 정보를 조합·표시하지 않는다. 익명·마스킹된 원문만 쓴다.
+- "대표 표본"·"전국 여론" 같은 과장 카피를 쓰지 않는다.
+- `review_required` 상태 리포트를 공유·전달하지 않는다.
+- 리포트 로직을 잘못된 레이어에 두지 않는다(모델은 `entities/report`, 표시는 `widgets/report-view`). deep import 금지.
 
-## FSD 배치
+# FSD 배치
 
 - 리포트 모델·API는 `entities/report`(`model`/`api`)에 둔다.
 - 리포트 표시 블록은 `widgets/report-view`에 두고, 라우트 화면은 `pages`에서 조합한다. 외부에는 `index.ts`로만 노출한다.
 
-## 절차
+# 절차
 
 1. 서버 리포트 스냅샷 DTO를 그대로 렌더한다. 프론트에서 재집계하지 않는다.
 2. 고정 섹션을 배치한다.
@@ -41,7 +51,7 @@ description: "AE용 리포트 조회 화면을 FSD 구조로 만드는 절차. �
 4. 제안서용 복사/공유(요약 복사, 공유 링크, 추후 PDF)를 붙인다.
 5. `review_required` 상태 리포트는 전달·공유를 막는다.
 
-## 체크리스트
+# 체크리스트
 
 - [ ] 모델이 `entities/report`, 표시가 `widgets/report-view`에 배치됐는가?
 - [ ] 신뢰 라벨·방법론 주석이 고정 섹션으로 항상 표시되는가?
@@ -50,7 +60,7 @@ description: "AE용 리포트 조회 화면을 FSD 구조로 만드는 절차. �
 - [ ] "대표 표본/전국 여론" 같은 과장 카피가 없는가?
 - [ ] 검수 전(`review_required`) 리포트의 공유·전달이 막히는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## 리포트 화면

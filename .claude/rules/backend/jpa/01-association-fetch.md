@@ -4,19 +4,30 @@ description: "JPA 연관관계·페치 전략 컨벤션. 애그리거트 간에�
 
 # 01. JPA 연관관계 · 페치 전략 규칙
 
+이 문서는 JPA 연관관계, 지연 로딩과 조회 시 페치 전략을 정의한다.
+
+# 연관 관계
+
+- 모듈 구조 규칙 (멀티 모듈 DDD) 참조: @.claude/rules/backend/00-module-structure.md
+- Java DTO · Response 규칙 참조: @.claude/rules/backend/java/01-dto-response.md
+- 도메인 모델 규칙 (OpinionBrief 중심) 참조: @.claude/rules/backend/01-domain-model.md
+- Service 규칙 (Spring) 참조: @.claude/rules/backend/spring/02-service.md
+
+# 적용 기준
+
 Opinion Brief 백엔드(JPA / Hibernate / QueryDSL)의 엔티티 연관·페치 컨벤션이다. Entity는 `domain`, 조회 구현(QueryDSL)은 `infra/persistence`에 둔다(`../00-module-structure.md`). 엔티티 불변·도메인 메서드 규칙은 `../java/01-dto-response.md`, 애그리거트/상태전이는 `../01-domain-model.md`.
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ `@ManyToOne`/`@OneToOne`을 EAGER로 두지 않는다. `fetch = FetchType.LAZY`를 반드시 명시한다.
-- ❌ `@ManyToMany`를 쓰지 않는다. 조인 엔티티로 대체한다.
-- ❌ 서로 다른 애그리거트를 연관 매핑으로 잇지 않는다. ID(Long)로 참조한다.
-- ❌ 컬렉션 fetch join과 페이징을 동시에 쓰지 않는다.
-- ❌ EAGER로 N+1을 해결하지 않는다. fetch join·batch size로 해결한다.
+- `@ManyToOne`/`@OneToOne`을 EAGER로 두지 않는다. `fetch = FetchType.LAZY`를 반드시 명시한다.
+- `@ManyToMany`를 쓰지 않는다. 조인 엔티티로 대체한다.
+- 서로 다른 애그리거트를 연관 매핑으로 잇지 않는다. ID(Long)로 참조한다.
+- 컬렉션 fetch join과 페이징을 동시에 쓰지 않는다.
+- EAGER로 N+1을 해결하지 않는다. fetch join·batch size로 해결한다.
 
-## 설계 기준
+# 설계 기준
 
-### 애그리거트 간은 ID 참조, 내부에서만 연관 매핑
+## 애그리거트 간은 ID 참조, 내부에서만 연관 매핑
 
 - 서로 다른 애그리거트 루트(OpinionBrief, BriefResponse, Report, RewardLedger 등) 사이는 **연관 객체가 아니라 ID(Long)로 참조**한다. (`../01-domain-model.md`)
 - JPA 연관 매핑(`@ManyToOne`, `@OneToMany`)은 **하나의 애그리거트 내부**에서만 사용한다.
@@ -41,7 +52,7 @@ public class BriefResponse {
 }
 ```
 
-### 모든 연관은 LAZY
+## 모든 연관은 LAZY
 
 - `@ManyToOne`, `@OneToOne`은 기본이 EAGER이므로 **항상 `fetch = FetchType.LAZY`를 명시**한다.
 - `@OneToMany`, `@ManyToMany`는 기본 LAZY지만 페치는 조회 시점에 fetch join으로 제어한다.
@@ -89,11 +100,11 @@ public class BriefAudienceRule {
 }
 ```
 
-### @ManyToMany 금지
+## @ManyToMany 금지
 
 `@ManyToMany`는 조인 테이블이 숨겨져 확장·추적이 어렵다. 연결 정보를 가진 **조인 엔티티**(`@OneToMany` + `@ManyToOne`)로 풀어 쓴다.
 
-### N+1은 fetch join / batch size로 해결
+## N+1은 fetch join / batch size로 해결
 
 EAGER로 N+1을 해결하지 않는다. 조회 최적화는 QueryDSL fetch join(`infra/persistence`) 또는 batch size로 한다.
 
@@ -118,7 +129,7 @@ spring:
         default_batch_fetch_size: 100
 ```
 
-### 조회는 필요한 데이터만 DTO projection
+## 조회는 필요한 데이터만 DTO projection
 
 목록/요약 조회는 엔티티를 로딩해 변환하지 말고, QueryDSL DTO projection으로 필요한 컬럼만 가져온다(`../spring/02-service.md`의 readOnly 조회와 연결).
 
@@ -132,7 +143,7 @@ public List<OpinionBriefSummary> findSummaries() {
 }
 ```
 
-## 구현 가드레일
+# 구현 가드레일
 
 - `@ManyToOne`, `@OneToOne`에 반드시 `fetch = FetchType.LAZY`를 명시한다. EAGER 금지.
 - 애그리거트 간 참조는 ID(Long)로 한다. JPA 연관은 애그리거트 내부에서만.
@@ -144,7 +155,7 @@ public List<OpinionBriefSummary> findSummaries() {
 - **컬렉션 fetch join과 페이징을 동시에 쓰지 않는다**(메모리 페이징 발생). batch size 또는 2단계 조회로 처리한다.
 - 조회 최적화는 QueryDSL DTO projection을 우선한다.
 
-## 검증 기준
+# 검증 기준
 
 - 모든 `@ManyToOne`/`@OneToOne`에 `LAZY`가 지정됐는지 확인.
 - `@ManyToMany`가 없는지 확인.

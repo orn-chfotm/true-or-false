@@ -2,7 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@.ai-prompts/CLAUDE.md
+@.claude/rules/harness/00-role-model.md
+@.claude/rules/harness/roles/01-pm.md
+@.claude/rules/harness/roles/02-cto.md
+@.claude/rules/harness/roles/03-pl.md
+@.claude/rules/harness/roles/04-pa.md
+@.claude/rules/harness/01-approval-authority.md
+@.claude/rules/harness/02-workflow.md
+@.claude/rules/harness/03-task-splitting.md
+@.claude/rules/harness/04-plan-structure.md
+@.claude/rules/harness/05-communication.md
+@.claude/rules/harness/06-code-output.md
+@.claude/rules/harness/07-review-process.md
+@.claude/rules/harness/08-test-policy.md
+@.claude/rules/harness/09-error-handling.md
+@.claude/rules/harness/10-review-logging.md
+@.claude/rules/harness/11-output-format.md
+@.claude/rules/harness/12-skill-rule-template.md
+@.claude/rules/harness/technical/01-naming.md
+@.claude/rules/harness/technical/02-spring.md
+@.claude/rules/harness/technical/03-javascript.md
 
 # 프로젝트 규칙
 
@@ -17,16 +36,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## AI 실행 규칙
 
-모든 AI 실행 규칙(역할 모델, 승인 권한, 업무 흐름, plan 구조, 리뷰·로깅)은 위에서 import한 `.ai-prompts/` 하네스를 단일 기준으로 따른다.
+모든 AI 실행 규칙(역할 모델, 승인 권한, 업무 흐름, plan 구조, 리뷰·로깅)은 위에서 import한 `.claude/rules/harness/`를 단일 기준으로 따른다. 이 문서들은 `.ai-prompts/docs/`의 AI 프로세스·기술 규칙을 이 프로젝트의 Claude 실행 환경에 맞게 옮겨온 사본이다.
 
-핵심만 요약하면 다음과 같다. 상세는 `.ai-prompts/docs/`가 기준이다.
+핵심만 요약하면 다음과 같다. 상세는 `.claude/rules/harness/`가 기준이다.
 
-- 역할은 PM → CTO → PL → PA 순으로 나뉘고, 각 단계 산출물마다 사용자 승인을 받는다.
+- 역할은 PM → CTO → PL → PA 순으로 나뉘고, 각 단계 산출물마다 사용자 승인을 받는다. `.claude/agents/{pm,cto,pl,pa}.md` subagent로 역할을 호출할 수 있다(PM/CTO는 읽기 전용 도구만 가져 harness가 직접 구현을 막는다).
 - **사용자 최종 승인 전에는 파일 생성/수정, 코드 변경, 상태를 바꾸는 명령을 실행하지 않는다.** 계획 수립용 read-only 탐색만 허용한다.
 - 한 역할 산출물을 낸 뒤 사용자 확인 없이 다음 역할로 자동 진행하지 않는다.
 - 매 작업마다 repository를 풀 스캔하지 않는다. 사용자가 언급한 파일 → 그 파일이 참조하는 문서 → 필요 시 제한 검색 순으로 읽는다.
-- 리뷰 로그(error/critical/improvement, AI 설계·피드백 기록)는 하네스 submodule 내부가 아니라 이 프로젝트의 `.ai/reviews/<category>/`에 남긴다.
-- `dir init` / `claude dir init` 같은 예약 명령은 PM 계획 없이 바로 실행한다.
+- 리뷰 로그(error/critical/improvement, AI 설계·피드백 기록)는 `.claude/rules/harness/` 내부가 아니라 이 프로젝트의 `.ai/reviews/<category>/`에 남긴다.
+- `dir init` / `claude dir init` 같은 예약 명령은 PM 계획 없이 바로 실행한다. 이 명령은 이관 대상에서 제외했으므로 `.ai-prompts/docs/00-docs/03-agent-dir-init.md`를 단일 기준으로 따른다(이 프로젝트에서 `.ai-prompts`를 직접 참조하는 유일한 경우).
+
+## 역할 Agent와 Command
+
+- 역할별 subagent: `.claude/agents/pm.md`, `cto.md`, `pl.md`, `pa.md`. PM·CTO는 `Read/Glob/Grep`만 가져 실제 구현을 도구 레벨에서 못 하게 막는다. PL은 PA 결과 통합 책임 때문에 `Edit/Write/Bash`도 가진다. PA는 전체 도구를 가진다.
+- 단계별 slash command: `/pm-plan`, `/cto-review`, `/pl-plan`, `/pa-run`, `/review-log`. 각 command는 해당 subagent를 호출하고, 실행 뒤 사용자 승인을 기다리며 다음 단계로 자동 진행하지 않는다.
+- hook: `.claude/settings.json`의 `PreToolUse` 훅이 `.ai-prompts/` 내부 파일에 대한 Edit/Write/NotebookEdit을 차단한다(`.claude/hooks/guard-ai-prompts.js`).
 
 ## Claude Adapter Boundary
 
@@ -41,6 +66,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Back-end 작업을 지시받으면 `back-end/CLAUDE.md`를 먼저 읽고, 그 안에서 연결된 상세 md 규칙을 따른다.
 
 @back-end/CLAUDE.md
+
+## 사용자 의견 검수
+
+- 사용자 의견 검수는 **Spring AI → OpenAI 모델 API**로 구현한다. Codex App Server는 도입하지 않는다. 정확한 모델 ID와 호출 설정은 아직 미확정이다.
+- 구현 순서·필요 스킬·미확정 항목은 [.docs/implementation/opinion-review-skills.md](.docs/implementation/opinion-review-skills.md)를 먼저 읽는다.
+- 연동·프롬프트는 `/spring-ai-opinion-review`, 판정 품질·회귀 검증은 `/opinion-review-evaluation` 스킬을 사용한다.
+- 규정집 RAG의 Ollama·Elasticsearch 정책은 사용자 의견 검수에 적용하지 않는다. 제품 정책은 검수 규칙을, `back-end/` 코드 배치는 해당 디렉터리 규칙을 따른다.
 
 ## Front-end
 
@@ -63,13 +95,20 @@ Front-end 작업을 지시받으면 `front-end/CLAUDE.md`를 먼저 읽고, 그 
 
 `.ai-prompts`는 별도 저장소(`orn-chfotm/ai-prompts`)를 가리키는 git submodule이다.
 
+Claude는 `.ai-prompts`를 더 이상 직접 import하지 않는다. AI 프로세스·기술 규칙의 실행 기준은 `.claude/rules/harness/` 사본이다. `.ai-prompts`는 다음 용도로만 남아 있다.
+
+- Codex adapter(`AGENTS.md`)가 계속 라이브로 참조하는 원본
+- `dir init` / `claude dir init` 등 프로젝트 스캐폴딩 예약 명령의 기준 문서
+- 여러 프로젝트에 이식 가능한 하네스의 상류(upstream) 원본 — `.claude/rules/harness/`를 고친 뒤 다른 프로젝트에도 반영하고 싶으면 이 submodule 쪽에 별도로 반영한다
+
 ```bash
 git submodule update --init --recursive   # 최초 clone 후
-git submodule update --remote .ai-prompts # 하네스 최신화
+git submodule update --remote .ai-prompts # 하네스 최신화 (Codex/향후 이식용)
 ```
 
-- `.ai-prompts/` 내부 파일은 이 프로젝트의 작업 산출물로 수정하지 않는다. 하네스 문서를 고쳐야 하면 별도 작업으로 분리한다.
-- 프로젝트별 리뷰 로그를 `.ai-prompts/` 안에 누적하지 않는다.
+- `.ai-prompts/` 내부 파일은 이 프로젝트의 작업 산출물로 수정하지 않는다. `.claude/settings.json`의 `PreToolUse` 훅이 `.ai-prompts/` 내부 Edit/Write를 차단한다. 하네스 문서를 고쳐야 하면 별도 작업으로 분리한다.
+- 프로젝트별 리뷰 로그를 `.ai-prompts/` 안에도, `.claude/rules/harness/` 안에도 누적하지 않는다. 리뷰 로그는 `.ai/reviews/<category>/`에 남긴다.
+- `.claude/rules/harness/`와 `.ai-prompts/docs/`는 서로 다른 사본이다. AI 프로세스 규칙을 고치고 싶으면 어느 쪽을 기준으로 바꿀지 먼저 정하고, 필요하면 반대쪽에도 수동으로 반영한다(자동 동기화 없음).
 
 # 규칙 계층 구조
 
@@ -77,7 +116,8 @@ git submodule update --remote .ai-prompts # 하네스 최신화
 
 | 위치 | 범위 | 성격 |
 |---|---|---|
-| `.ai-prompts/docs/` | 전 작업 | AI 협업 프로세스(역할·승인·워크플로우). submodule로 공유되는 공통 하네스 |
+| `.claude/rules/harness/` | 전 작업 | AI 협업 프로세스(역할·승인·워크플로우) + naming/spring/javascript 공통 기술 규칙. `.ai-prompts/docs/`를 이관한 Claude용 사본, 이 프로젝트에서 실제로 적용되는 기준 |
+| `.ai-prompts/docs/` | Codex, dir init | Codex adapter가 라이브로 참조하는 원본이자 이식 가능한 상류 하네스. Claude는 직접 import하지 않는다(`dir init` 계열 예약 명령 제외) |
 | `.claude/rules/{backend,frontend}/`, `.claude/skills/` | 저장소 전역 | Opinion Brief 제품의 도메인·기술 룰 |
 | `back-end/.claude/`, `front-end/.claude/` | 해당 디렉터리 하위 | 각 워크스페이스 전용 룰·스킬 (디렉터리 스코프) |
 

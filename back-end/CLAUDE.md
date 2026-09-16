@@ -2,6 +2,16 @@
 
 Back-end 작업은 이 디렉터리 아래의 상세 md 규칙을 먼저 읽고 구현한다.
 
+## 사용자 의견 검수
+
+사용자 의견 검수는 Spring AI와 OpenAI API를 사용한다. 규정집 RAG용 Ollama·Elasticsearch를 기본값으로 적용하지 않는다.
+
+- [구현 안내와 스킬 목록](../.docs/implementation/opinion-review-skills.md)
+- [Spring AI 의견 검수 스킬](../.claude/skills/spring-ai-opinion-review/SKILL.md)
+- [검수 품질 평가 스킬](../.claude/skills/opinion-review-evaluation/SKILL.md)
+
+@../.claude/rules/backend/02-review-pipeline.md
+
 ## Rules
 
 @back-end/.claude/rules/backend-rules.md

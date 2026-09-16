@@ -5,22 +5,35 @@ description: "Opinion Brief 백엔드 엔티티/상태전이 설계가 도메인
 
 # backend-domain-review
 
+이 스킬은 엔티티·상태 전이·연관 설계가 담당 도메인 규칙을 준수하는지 검토하는 절차다.
+
+# 연관 관계
+
+- 도메인 모델 규칙 (OpinionBrief 중심) 참조: @.claude/rules/backend/01-domain-model.md
+- 응답 검수 파이프라인 규칙 참조: @.claude/rules/backend/02-review-pipeline.md
+- 리포트 스냅샷 규칙 참조: @.claude/rules/backend/03-report-snapshot.md
+- 보상 원장 규칙 참조: @.claude/rules/backend/04-reward-ledger.md
+- 참여 슬롯 동시성 규칙 참조: @.claude/rules/backend/05-participation-slot.md
+- 개인정보 분리 규칙 참조: @.claude/rules/backend/06-privacy.md
+
+# 적용 기준
+
 Opinion Brief 백엔드의 도메인 모델(엔티티, 상태 전이, 연관)이 `.claude/rules/backend/01~06`을 지키는지 점검하는 절차다.
 
-## 언제 사용하나
+# 언제 사용하나
 
 - 새 엔티티/상태값/연관을 추가할 때
 - 기존 엔티티 구조를 바꿀 때
 - 엔티티 설계 PR을 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 범용 `Poll`/`Survey`/`Post` 모델로 시작하는 설계를 통과시키지 않는다. 최상위는 `OpinionBrief`다. (`.claude/rules/backend/01-domain-model.md`)
-- ❌ `String` 상태값이나 서비스에서 상태 필드를 직접 set하는 코드를 통과시키지 않는다. enum + 도메인 메서드 전이만 허용한다.
-- ❌ 리포트/집계가 실시간 신뢰점수를 참조하는 설계를 통과시키지 않는다. 스냅샷 값을 쓴다.
-- ❌ 룰에 없는 상태 전이·모델을 임의로 추가하지 않는다. 해당 룰 문서에 먼저 반영을 제안한다.
+- 범용 `Poll`/`Survey`/`Post` 모델로 시작하는 설계를 통과시키지 않는다. 최상위는 `OpinionBrief`다. (`.claude/rules/backend/01-domain-model.md`)
+- `String` 상태값이나 서비스에서 상태 필드를 직접 set하는 코드를 통과시키지 않는다. enum + 도메인 메서드 전이만 허용한다.
+- 리포트/집계가 실시간 신뢰점수를 참조하는 설계를 통과시키지 않는다. 스냅샷 값을 쓴다.
+- 룰에 없는 상태 전이·모델을 임의로 추가하지 않는다. 해당 룰 문서에 먼저 반영을 제안한다.
 
-## 절차
+# 절차
 
 1. 대상 엔티티와 관련 룰 파일을 매핑한다.
    - 도메인/상태/신뢰점수 → `.claude/rules/backend/01-domain-model.md`
@@ -33,7 +46,7 @@ Opinion Brief 백엔드의 도메인 모델(엔티티, 상태 전이, 연관)이
 3. 위반이 있으면 룰 위반 항목과 수정 방향을 정리한다.
 4. 룰에 없는 새 상태 전이·모델이 필요하면, 임의로 추가하지 말고 해당 룰 문서에 먼저 반영을 제안한다.
 
-## 체크리스트
+# 체크리스트
 
 - [ ] 최상위가 `OpinionBrief`인가? 범용 `Poll/Survey/Post`로 시작하지 않았는가?
 - [ ] 상태값이 enum이고, 전이가 정의된 경로만 따르는가?
@@ -44,7 +57,7 @@ Opinion Brief 백엔드의 도메인 모델(엔티티, 상태 전이, 연관)이
 - [ ] 응답 제출이 `reserved` 슬롯에서만 가능한가?
 - [ ] 프로필이 버킷 값으로 저장되고, 리포트 원문이 마스킹되는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## 도메인 리뷰 결과

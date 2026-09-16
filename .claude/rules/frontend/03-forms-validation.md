@@ -4,6 +4,17 @@ description: "폼은 React Hook Form + Zod로 구성하고, 응답 제출은 선
 
 # 03. 폼·검증 규칙
 
+이 문서는 Brief 생성·응답 제출 폼의 상태 관리, 입력 검증과 중복 제출 방지를 정의한다.
+
+# 연관 관계
+
+- 제품 기획 근거 참조: @.docs/prd/opinion-brief-product-plan.md
+- 제품 도메인 정의 참조: @.docs/prd/opinion-brief-domain-definition.md
+- 제품 기술 구성 근거 참조: @.docs/prd/opinion-brief-technology-summary.md
+- 참여 슬롯 동시성 규칙 참조: @.claude/rules/backend/05-participation-slot.md
+
+# 적용 기준
+
 Brief 생성 폼과 응답 제출 폼의 입력 검증 규칙이다.
 
 근거 문서:
@@ -11,31 +22,31 @@ Brief 생성 폼과 응답 제출 폼의 입력 검증 규칙이다.
 - `.docs/prd/opinion-brief-domain-definition.md` 5, 6
 - `.docs/prd/opinion-brief-technology-summary.md` 2.1, 2.2, 6.1
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 폼 검증 규칙을 컴포넌트에 흩뿌리지 않는다. Zod 스키마 한 곳에 모은다.
-- ❌ 빈 근거·범위 밖 길이의 응답 제출을 허용하지 않는다.
-- ❌ 클라이언트 검증을 신뢰 경계로 삼지 않는다. 서버 검증을 대체하지 않는다.
-- ❌ 제출 진행 중 버튼을 활성 상태로 두어 이중 제출을 허용하지 않는다.
+- 폼 검증 규칙을 컴포넌트에 흩뿌리지 않는다. Zod 스키마 한 곳에 모은다.
+- 빈 근거·범위 밖 길이의 응답 제출을 허용하지 않는다.
+- 클라이언트 검증을 신뢰 경계로 삼지 않는다. 서버 검증을 대체하지 않는다.
+- 제출 진행 중 버튼을 활성 상태로 두어 이중 제출을 허용하지 않는다.
 
-## 설계 기준
+# 설계 기준
 
-### 폼은 RHF + Zod로 구성한다
+## 폼은 RHF + Zod로 구성한다
 
 모든 입력 폼은 React Hook Form으로 상태를 관리하고, Zod 스키마로 검증한다. 같은 Zod 스키마를 타입 소스로 재사용한다.
 
-### 주요 폼
+## 주요 폼
 
 - Brief 생성(요청자): 주제, 질문 문구, 판단 축, 타깃 조건, 필요 승인 수, 마감 시간, 리포트 유형.
 - 응답 제출(참여자): 찬성/반대 또는 A/B 선택 **+ 근거 의견 필수**.
 
-### 응답 근거 의견 검증
+## 응답 근거 의견 검증
 
 - 근거 의견은 필수다. 빈 근거는 제출 불가.
 - 1~3문장 범위(최소/최대 길이)를 클라이언트에서 먼저 검증한다.
 - Brief당 1회 응답. 중복 제출을 UI에서 막는다. (최종 보장은 서버, `backend/05-participation-slot.md`)
 
-## 예시
+# 예시
 
 ```ts
 // features/submit-response/model/schema.ts — Zod 스키마(검증+타입 소스)
@@ -55,7 +66,7 @@ const { register, handleSubmit, formState } = useForm<SubmitResponseForm>({
 <button type="submit" disabled={formState.isSubmitting}>제출</button> // 이중 제출 방지
 ```
 
-## 구현 가드레일
+# 구현 가드레일
 
 - 폼 검증 규칙을 컴포넌트에 흩지 않고 Zod 스키마 한 곳에 둔다.
 - 마감 시간은 과거 시각을 막고, 필요 승인 수는 양수만 허용한다.
@@ -63,7 +74,7 @@ const { register, handleSubmit, formState } = useForm<SubmitResponseForm>({
 - 제출 버튼은 mutation 진행 중 비활성화해 이중 제출을 막는다.
 - 근거 입력 시 개인정보(이름·연락처)를 넣지 않도록 안내 문구를 둔다. (리포트 마스킹과 별개의 사전 예방)
 
-## 검증 기준
+# 검증 기준
 
 - 빈 근거·범위 밖 길이 제출이 거부되는지 테스트.
 - 마감 과거/음수 승인 수 입력이 막히는지 테스트.

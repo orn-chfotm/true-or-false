@@ -4,22 +4,33 @@ description: "Spring Security 필터체인 설정. SecurityFilterChain 빈 방�
 
 # 02. Spring Security 필터체인 규칙
 
+이 문서는 Spring Security 필터체인, 인증 필터와 필터 단계의 오류 응답 구성을 정의한다.
+
+# 연관 관계
+
+- JWT 인증 규칙 참조: @.claude/rules/backend/security/01-jwt.md
+- 예외 · 에러코드 체계 규칙 참조: @.claude/rules/backend/exception/01-error-code.md
+- 인가(권한) 규칙 — @PreAuthorize 통일 참조: @.claude/rules/backend/security/04-authorization.md
+- 모듈 구조 규칙 (멀티 모듈 DDD) 참조: @.claude/rules/backend/00-module-structure.md
+
+# 적용 기준
+
 Opinion Brief의 시큐리티 필터체인 구성이다. JWT 토큰 정책은 `01-jwt.md`, 401/403 처리는 `../exception/01-error-code.md`, `@PreAuthorize` 메서드 보안은 `04-authorization.md`. 필터체인은 각 api 모듈(`user-api`/`admin-api`)에 두고, JWT 유틸은 `core`(`../00-module-structure.md`).
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ `WebSecurityConfigurerAdapter`를 쓰지 않는다(제거됨). `SecurityFilterChain` 빈 방식으로 구성한다.
-- ❌ 세션을 쓰지 않는다. `SessionCreationPolicy.STATELESS`.
-- ❌ 인증/인가 실패를 기본 HTML·기본 응답으로 두지 않는다. `FailResponse` JSON으로 반환한다.
-- ❌ 401/403 응답을 Map 등으로 수동 조립하지 않는다. `ErrorCode`에서 status·message를 가져와 `FailResponse`를 직렬화한다.
-- ❌ CORS `allowedOrigins`를 와일드카드(`*`)로 열면서 `allowCredentials(true)`를 함께 쓰지 않는다.
-- ❌ 인증이 필요한 엔드포인트를 `permitAll`로 열지 않는다. `login`/`refresh` 등만 허용한다.
-- ❌ 비밀번호를 평문·약한 해시로 저장하지 않는다. `BCrypt` 등 강한 해시를 쓴다.
-- ❌ `formLogin`/`httpBasic` 등 불필요한 기본 인증 방식을 켜두지 않는다.
+- `WebSecurityConfigurerAdapter`를 쓰지 않는다(제거됨). `SecurityFilterChain` 빈 방식으로 구성한다.
+- 세션을 쓰지 않는다. `SessionCreationPolicy.STATELESS`로 설정한다.
+- 인증/인가 실패를 기본 HTML·기본 응답으로 두지 않는다. `FailResponse` JSON으로 반환한다.
+- 401/403 응답을 Map 등으로 수동 조립하지 않는다. `ErrorCode`에서 status·message를 가져와 `FailResponse`를 직렬화한다.
+- CORS `allowedOrigins`를 와일드카드(`*`)로 열면서 `allowCredentials(true)`를 함께 쓰지 않는다.
+- 인증이 필요한 엔드포인트를 `permitAll`로 열지 않는다. `login`/`refresh` 등만 허용한다.
+- 비밀번호를 평문·약한 해시로 저장하지 않는다. `BCrypt` 등 강한 해시를 쓴다.
+- `formLogin`/`httpBasic` 등 불필요한 기본 인증 방식을 켜두지 않는다.
 
-## 설계 기준
+# 설계 기준
 
-### SecurityFilterChain (컴포넌트 방식)
+## SecurityFilterChain (컴포넌트 방식)
 
 ```java
 @Configuration
@@ -60,7 +71,7 @@ public class SecurityConfig {
 }
 ```
 
-### JWT 인증 필터
+## JWT 인증 필터
 
 `OncePerRequestFilter`로 `Authorization: Bearer` access token을 검증하고 `SecurityContext`에 인증을 설정한다. 검증 실패 시 인증을 설정하지 않고 통과시켜, 인가 단계에서 401/403으로 처리되게 한다.
 
@@ -88,7 +99,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 }
 ```
 
-### 401 / 403을 FailResponse로 반환
+## 401 / 403을 FailResponse로 반환
 
 필터 단계의 인증 실패(401)·인가 실패(403)는 `AuthenticationEntryPoint`·`AccessDeniedHandler`에서 공통 `FailResponse` JSON으로 반환한다(`../exception/01`, `../java/01`).
 
@@ -121,7 +132,7 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 `ApiAccessDeniedHandler`도 같은 방식으로 `CommonErrorCode.ACCESS_DENIED`에서 status·message를 가져와 403 `FailResponse`를 만든다. **메서드 보안(`@PreAuthorize`)에서 던지는 `AccessDeniedException`은 이 핸들러가 아니라 `@RestControllerAdvice`가 처리한다**(`../exception/01`). 필터 단계(`authorizeHttpRequests`)의 인가 실패만 `AccessDeniedHandler`가 처리한다.
 
-### CORS
+## CORS
 
 FE `withCredentials`(httpOnly 쿠키)를 위해 origin을 명시하고 `allowCredentials(true)`로 둔다(`01-jwt.md`).
 
@@ -139,11 +150,11 @@ public CorsConfigurationSource corsConfigurationSource() {
 }
 ```
 
-### user-api / admin-api 필터체인 분리
+## user-api / admin-api 필터체인 분리
 
 `user-api`와 `admin-api`는 각자 `SecurityConfig`를 둔다. 허용 경로와 역할 기준이 다르다(예: `admin-api`는 대부분 `ROLE_ADMIN` 요구). 역할 세부는 `@PreAuthorize`(메서드 보안)로 표현한다(`04-authorization.md`).
 
-## 구현 가드레일
+# 구현 가드레일
 
 - `SecurityFilterChain` 빈으로 구성하고, `STATELESS` 세션 + JWT 필터를 쓴다.
 - `login`/`refresh` 등 최소 엔드포인트만 `permitAll`, 나머지는 `authenticated`.
@@ -153,7 +164,7 @@ public CorsConfigurationSource corsConfigurationSource() {
 - 비밀번호는 `BCryptPasswordEncoder`로 해시한다.
 - JWT 유틸은 `core`, 필터체인·핸들러는 각 api 모듈에 둔다.
 
-## 검증 기준
+# 검증 기준
 
 - 미인증 요청이 401, 권한 부족(필터 단계)이 403 `FailResponse`로 반환되는지 테스트.
 - 유효 Bearer 토큰이 `SecurityContext`에 인증을 설정하는지 테스트.

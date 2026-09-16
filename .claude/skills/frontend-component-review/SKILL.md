@@ -5,29 +5,42 @@ description: "Opinion Brief 프론트 컴포넌트/slice가 FSD 정책(레이어
 
 # frontend-component-review
 
+이 스킬은 프론트엔드 컴포넌트와 slice의 FSD 구조 및 화면 규칙 준수를 검토하는 절차다.
+
+# 연관 관계
+
+- FSD 구조 정책 (Feature-Sliced Design) 참조: @.claude/rules/frontend/00-architecture.md
+- 앱 표면 분리 규칙 참조: @.claude/rules/frontend/01-app-surfaces.md
+- 상태 관리 규칙 참조: @.claude/rules/frontend/02-state-management.md
+- 폼·검증 규칙 참조: @.claude/rules/frontend/03-forms-validation.md
+- 비동기 검수 상태 UI 규칙 참조: @.claude/rules/frontend/04-async-status-ui.md
+- 리포트 뷰 규칙 참조: @.claude/rules/frontend/05-report-view.md
+
+# 적용 기준
+
 프론트 컴포넌트/slice가 `.claude/rules/frontend/00~05`를 지키는지 점검하는 절차다.
 
-## 언제 사용하나
+# 언제 사용하나
 
 - 새 화면/컴포넌트/slice를 추가할 때
 - 상태 관리·데이터 흐름을 바꿀 때
 - 프론트 PR을 리뷰할 때
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 하위 레이어가 상위 레이어를 참조하는 코드를 통과시키지 않는다(절대 규칙). 의존은 app→shared 단방향만.
-- ❌ 같은 레이어의 다른 slice를 직접 참조하거나 slice 내부를 deep import하는 코드를 통과시키지 않는다(`index.ts`만).
-- ❌ 서버 데이터를 전역 스토어에 복제하거나 컴포넌트 본문에서 직접 fetch하는 코드를 통과시키지 않는다.
-- ❌ 내부 상태값 노출·검수 결과 낙관 확정·과장 리포트 카피를 통과시키지 않는다.
+- 하위 레이어가 상위 레이어를 참조하는 코드를 통과시키지 않는다(절대 규칙). 의존 방향은 app에서 shared로 향하는 단방향으로 제한한다.
+- 같은 레이어의 다른 slice를 직접 참조하거나 slice 내부를 deep import하는 코드를 통과시키지 않는다(`index.ts`만).
+- 서버 데이터를 전역 스토어에 복제하거나 컴포넌트 본문에서 직접 fetch하는 코드를 통과시키지 않는다.
+- 내부 상태값 노출·검수 결과 낙관 확정·과장 리포트 카피를 통과시키지 않는다.
 
-## 절차
+# 절차
 
 1. 대상 코드가 어느 레이어/slice에 속하는지 확인한다(`.claude/rules/frontend/00-architecture.md`).
 2. 관련 룰을 매핑한다. (표면 → 01, 상태 → 02, 폼 → 03, 검수 상태 → 04, 리포트 → 05)
 3. 아래 체크리스트로 위반을 찾는다.
 4. 룰에 없는 새 패턴이 필요하면 임의 도입하지 말고 룰 문서 갱신을 제안한다.
 
-## 체크리스트 (FSD)
+# 체크리스트 (FSD)
 
 - [ ] 코드가 올바른 레이어(app/pages/widgets/features/entities/shared)에 있는가?
 - [ ] 의존 방향이 위→아래만인가? (하위가 상위를, 같은 레이어 다른 slice를 직접 참조하지 않는가)
@@ -36,7 +49,7 @@ description: "Opinion Brief 프론트 컴포넌트/slice가 FSD 정책(레이어
 - [ ] 레이어명 복수형·slice 소문자 kebab-case를 지키는가?
 - [ ] `shared`에 도메인 지식이 섞이지 않았는가?
 
-## 체크리스트 (도메인 룰)
+# 체크리스트 (도메인 룰)
 
 - [ ] 컴포넌트가 하나의 사용자군 표면에만 속하는가? (`01`)
 - [ ] 서버 데이터를 TanStack Query로 관리하고 전역 스토어에 복제하지 않는가? API 호출을 훅으로 분리했는가? (`02`)
@@ -45,7 +58,7 @@ description: "Opinion Brief 프론트 컴포넌트/slice가 FSD 정책(레이어
 - [ ] 리포트가 신뢰 라벨·방법론 주석을 항상 표시하고 원문을 재조합하지 않는가? (`05`)
 - [ ] 타입에 `any`를 남발하지 않는가?
 
-## 산출물
+# 산출물
 
 ```md
 ## 컴포넌트/slice 리뷰 결과

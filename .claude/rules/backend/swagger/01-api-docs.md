@@ -4,18 +4,28 @@ description: "Swagger(OpenAPI) 문서화 규칙. DTO 필드는 @Schema, Controll
 
 # 01. Swagger 문서화 규칙 (springdoc-openapi)
 
+이 문서는 DTO와 Controller의 Swagger 문서화 항목과 작성 기준을 정의한다.
+
+# 연관 관계
+
+- Java DTO · Response 규칙 참조: @.claude/rules/backend/java/01-dto-response.md
+- Controller 규칙 (Spring Web) 참조: @.claude/rules/backend/spring/01-controller.md
+- 개인정보 분리 규칙 참조: @.claude/rules/backend/06-privacy.md
+
+# 적용 기준
+
 Opinion Brief API의 문서화 컨벤션이다. 문서화 가능한 지점(DTO, Entity 노출부, Controller)에 Swagger 어노테이션을 붙인다. 이 규칙은 Java/Spring 규칙과 분리한다(`../java/01-dto-response.md`, `../spring/01-controller.md`).
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ 공개 DTO 필드·주요 Controller에 문서화 어노테이션을 빠뜨리지 않는다.
-- ❌ description을 영어로만 쓰지 않는다. 한글로 작성한다.
-- ❌ 성공 응답만 문서화하고 주요 에러 응답(404 등)을 빠뜨리지 않는다.
-- ❌ 민감 정보(원문 PII 등)를 예시 값·스키마에 노출하지 않는다.
+- 공개 DTO 필드·주요 Controller에 문서화 어노테이션을 빠뜨리지 않는다.
+- description을 영어로만 쓰지 않는다. 한글로 작성한다.
+- 성공 응답만 문서화하고 주요 에러 응답(404 등)을 빠뜨리지 않는다.
+- 민감 정보(원문 PII 등)를 예시 값·스키마에 노출하지 않는다.
 
-## 설계 기준
+# 설계 기준
 
-### DTO 필드는 @Schema
+## DTO 필드는 @Schema
 
 요청/응답 DTO의 각 필드에 `@Schema(description = ...)`를 붙인다. 설명은 한글로 쓴다. 요청 DTO는 validation message와 함께 둔다.
 
@@ -47,7 +57,7 @@ public record AddressRequest(
 }
 ```
 
-### Controller는 @Tag + @ApiResponses
+## Controller는 @Tag + @ApiResponses
 
 Controller에 `@Tag(name, description)`로 그룹을 지정하고, `@ApiResponses`로 성공/실패 응답 코드와 스키마를 문서화한다. 에러 응답도 예외 스키마로 명시한다.
 
@@ -68,11 +78,11 @@ public class AddressController {
 }
 ```
 
-### Entity
+## Entity
 
 Entity는 API로 직접 노출하지 않지만(응답은 DTO), 필드 의미를 문서/주석으로 남길 필요가 있으면 `@Schema` 또는 주석을 단다. 문서 표면은 DTO·Controller가 우선이다.
 
-## 구현 가드레일
+# 구현 가드레일
 
 - 문서화 가능한 곳(DTO 필드, Controller)에 Swagger 어노테이션을 빠짐없이 붙인다.
 - 설명(description)은 한글로 쓴다.
@@ -80,7 +90,7 @@ Entity는 API로 직접 노출하지 않지만(응답은 DTO), 필드 의미를 
 - 문서화 어노테이션이 Java/Spring 규칙 파일이 아니라 이 규칙에 따라 관리된다는 점을 유지한다. (DTO record 정의 자체는 `../java/01`, Controller 웹 설정은 `../spring/01`)
 - 민감 정보(원문 PII 등)는 예시 값·스키마에 노출하지 않는다(`../06-privacy.md`).
 
-## 검증 기준
+# 검증 기준
 
 - 주요 Controller에 `@Tag`와 성공/실패 `@ApiResponse`가 있는지 확인.
 - 공개 DTO 필드에 `@Schema` 설명이 있는지 확인.

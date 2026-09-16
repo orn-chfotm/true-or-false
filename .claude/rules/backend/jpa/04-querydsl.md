@@ -4,20 +4,32 @@ description: "QueryDSL 컨벤션. 포트는 domain, 구현은 infra/persistence�
 
 # 04. QueryDSL 규칙
 
+이 문서는 QueryDSL 쿼리 구현, 동적 조건, DTO 조회와 페이징 방식을 정의한다.
+
+# 연관 관계
+
+- 모듈 구조 규칙 (멀티 모듈 DDD) 참조: @.claude/rules/backend/00-module-structure.md
+- JPA 연관관계 · 페치 전략 규칙 참조: @.claude/rules/backend/jpa/01-association-fetch.md
+- Soft Delete 규칙 참조: @.claude/rules/backend/jpa/03-soft-delete.md
+- Java DTO · Response 규칙 참조: @.claude/rules/backend/java/01-dto-response.md
+- Service 규칙 (Spring) 참조: @.claude/rules/backend/spring/02-service.md
+
+# 적용 기준
+
 동적/커스텀 쿼리를 QueryDSL로 작성하는 컨벤션이다. 모듈 배치는 `../00-module-structure.md`(포트 interface는 `domain`, 구현은 `infra/persistence`), 페치·projection은 `01-association-fetch.md`, soft delete 상호작용은 `03-soft-delete.md`.
 
-## 금지 규칙 (하지 말 것)
+# [금지사항]
 
-- ❌ QueryDSL 구현을 `domain`에 두지 않는다. `infra/persistence`의 `...Impl`에 둔다.
-- ❌ `@QueryProjection`으로 domain DTO를 QueryDSL에 결합하지 않는다. `Projections.constructor`를 쓴다.
-- ❌ `fetchResults()`/`fetchCount()`(deprecated)를 쓰지 않는다. content + 별도 count.
-- ❌ 구현체에서 `EntityManager`를 직접 new 하지 않는다. `JPAQueryFactory` 빈을 주입한다.
-- ❌ `BooleanBuilder`를 남발하지 않는다. null-safe `BooleanExpression` + `where` 가변인자로 조합한다.
-- ❌ Repository가 반환한 Spring Data `Page<>`를 Service 경계 밖으로 노출하지 않는다. Service에서 `PageResponse.of()`로 변환한다.
+- QueryDSL 구현을 `domain`에 두지 않는다. `infra/persistence`의 `...Impl`에 둔다.
+- `@QueryProjection`으로 domain DTO를 QueryDSL에 결합하지 않는다. `Projections.constructor`를 쓴다.
+- `fetchResults()`/`fetchCount()`(deprecated)를 쓰지 않는다. content와 count를 별도 쿼리로 조회한다.
+- 구현체에서 `EntityManager`를 직접 new 하지 않는다. `JPAQueryFactory` 빈을 주입한다.
+- `BooleanBuilder`를 남발하지 않는다. null-safe `BooleanExpression` + `where` 가변인자로 조합한다.
+- Repository가 반환한 Spring Data `Page<>`를 Service 경계 밖으로 노출하지 않는다. Service에서 `PageResponse.of()`로 변환한다.
 
-## 설계 기준
+# 설계 기준
 
-### Repository 구조 (포트/구현 분리)
+## Repository 구조 (포트/구현 분리)
 
 - 기본 CRUD는 `[Domain]Repository extends JpaRepository<Entity, Id>, [Domain]CustomRepository`.
 - 커스텀/동적 쿼리는 `[Domain]CustomRepository`(포트 interface, `domain`) + `[Domain]CustomRepositoryImpl`(구현, `infra/persistence`)로 분리한다. 구현 클래스명은 Spring Data fragment 규칙에 맞춰 반드시 `...Impl`로 둔다.
@@ -79,7 +91,7 @@ public class OpinionBriefCustomRepositoryImpl implements OpinionBriefCustomRepos
 }
 ```
 
-### JPAQueryFactory는 설정 빈으로 주입
+## JPAQueryFactory는 설정 빈으로 주입
 
 `JPAQueryFactory`는 설정 빈으로 등록하고 생성자 주입한다. 구현체에서 `EntityManager`를 직접 다루지 않는다. 설정은 `infra`.
 
@@ -97,29 +109,29 @@ public class QueryDslConfig {
 }
 ```
 
-### 동적 조건은 null-safe BooleanExpression
+## 동적 조건은 null-safe BooleanExpression
 
 - 조건은 `BooleanExpression`을 반환하는 private 메서드로 분리하고, 값이 없으면 `null`을 반환한다. `where(a, b, c)`는 `null` 인자를 무시하므로 조건이 자연스럽게 빠진다.
 - `BooleanBuilder`를 남발하지 않는다. 조건 조합·재사용이 필요할 때만 제한적으로 쓴다.
 
-### 조회는 record DTO projection
+## 조회는 record DTO projection
 
 - 목록/요약 조회는 엔티티를 로딩하지 말고 필요한 컬럼만 projection한다(`01-association-fetch.md`).
 - record DTO는 `Projections.constructor`로 매핑한다(생성자 파라미터 순서·타입 일치). `@QueryProjection`은 domain DTO를 QueryDSL에 결합시키므로 사용하지 않는다.
 
-### 페이징은 content + 별도 count
+## 페이징은 content + 별도 count
 
 - QueryDSL 5의 `fetchResults()` / `fetchCount()`는 deprecated이므로 쓰지 않는다.
 - content를 `fetch()`로 조회하고, count는 별도 쿼리로 만든 뒤 `PageableExecutionUtils.getPage`로 감싼다(마지막 페이지 등에서 count 쿼리를 생략해 최적화).
 - Repository는 `Page<XxxResponse>`(projection)를 반환한다. **`Page<>`는 Repository → Service 내부에서만 쓰고**, Service가 `PageResponse.of(page)`로 변환해 경계 밖으로 내보낸다(`../java/01-dto-response.md`, `../spring/02-service.md`). 응답은 항상 `PageResponse<T>`로 통일한다.
 
-### 정렬·페치조인·soft delete
+## 정렬·페치조인·soft delete
 
 - 동적 정렬이 필요하면 `Pageable`의 `Sort`를 `OrderSpecifier`로 변환한다.
 - 컬렉션 fetch join과 페이징을 동시에 쓰지 않는다. batch size로 처리한다(`01-association-fetch.md`).
 - `@SQLRestriction("deleted_at IS NULL")`은 QueryDSL 엔티티 쿼리에 자동 적용된다. native query만 예외이므로 필터를 직접 건다(`03-soft-delete.md`).
 
-## 구현 가드레일
+# 구현 가드레일
 
 - QueryDSL 구현은 `infra/persistence`의 `[Domain]CustomRepositoryImpl`(포트는 `domain`)에 둔다. 구현명은 `...Impl`.
 - 동적 조건은 null-safe `BooleanExpression` + `where` 가변인자로 조합한다. `BooleanBuilder` 남발 금지.
@@ -129,7 +141,7 @@ public class QueryDslConfig {
 - 조회 메서드를 호출하는 Service 메서드는 `@Transactional(readOnly = true)`로 둔다(`../spring/02-service.md`).
 - 반환은 DTO를 우선한다. 엔티티를 반환하면 Service에서 `toDto`로 변환한다(`../java/01-dto-response.md`).
 
-## 검증 기준
+# 검증 기준
 
 - 동적 조건이 모두 null일 때 where가 무시되어 전체 조회가 되는지 테스트.
 - 페이징 total count가 정확하고 count 최적화가 동작하는지 테스트.
